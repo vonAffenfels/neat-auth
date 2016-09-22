@@ -1,0 +1,25 @@
+{
+  "name": "neat-auth",
+  "version": "1.0.0",
+  "description": "Authentication module",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "bluebird": "^3.4.6",
+    "neat-base": "^1.x.x",
+    "neat-database": "^1.x.x",
+    "neat-webserver": "^1.x.x"
+  },
+  "models": {
+    "user": "/models/user.js"
+  },
+  "dependencies": {
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0",
+    "passport-reddit": "^0.2.4",
+    "passport-steam": "^1.0.5",
+    "passport-twitter": "^1.0.4",
+    "password-hash": "^1.2.2"
+  }
+}
