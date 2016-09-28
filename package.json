@@ -1,6 +1,6 @@
 {
   "name": "neat-auth",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Authentication module",
   "main": "index.js",
   "author": "",
