@@ -58,8 +58,12 @@ module.exports = class Auth extends Module {
                                 return done(null, false);
                             }
 
-                            user.save({
-                                validateBeforeSave: false
+                            userModel.update({
+                                _id: id
+                            }, {
+                                $set: {
+                                    lastActivity: new Date()
+                                }
                             }).then(() => {
                                 done(null, user);
                             }, (err) => {
@@ -263,8 +267,43 @@ module.exports = class Auth extends Module {
     }
 
     hasPermission(req, model, action, doc, query) {
-        // @TODO permission model
-        return true;
+        try {
+            var model = mongoose.model(model);
+        } catch (e) {
+            return false;
+        }
+
+        if (req.user && req.user.admin) {
+            return true;
+        }
+
+        if (model.schema.options.permissions) {
+            if (model.schema.options.permissions[action] === true) {
+                return true;
+            }
+
+            if (model.schema.options.permissions[action] === "own") {
+                if (!req.user) {
+                    return false;
+                }
+
+                if (doc._createdBy + "" == req.user._id + "" || doc._id + "" == req.user._id + "") {
+                    return true;
+                }
+            }
+
+            if (model.schema.options.permissions[action] === false) {
+                if (!req.user || !req.user.permissions) {
+                    return false;
+                }
+
+                if (req.user.permissions.indexOf(model + "/" + action) !== -1) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     register(data) {

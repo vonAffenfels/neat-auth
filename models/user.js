@@ -45,6 +45,7 @@ var schema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
+        toJSON: false,
         index: true,
         set: function (val) {
             if (!val) {
@@ -90,6 +91,13 @@ var schema = new mongoose.Schema({
         }
     },
 
+    lastActivity: {
+        type: Date,
+        default: function () {
+            return new Date();
+        }
+    },
+
     reset: {
         active: {
             type: Boolean,
@@ -99,10 +107,38 @@ var schema = new mongoose.Schema({
             type: String,
             required: false
         }
-    }
+    },
+
+    permissions: [
+        String
+    ]
 }, {
+    permissions: {
+        find: true,
+        findOne: true,
+        count: true,
+        save: "own",
+        remove: "own"
+    },
     toJSON: {
-        virtuals: true
+        virtuals: true,
+        transform: function (doc) {
+            var obj = doc.toJSON({
+                transform: false
+            });
+
+            delete obj.password;
+
+            if (obj.activation) {
+                delete obj.activation.token;
+            }
+
+            if (obj.reset) {
+                delete obj.reset.token;
+            }
+
+            return obj;
+        }
     },
     toObject: {
         virtuals: true
@@ -207,4 +243,5 @@ schema.methods.resetPassword = function () {
         }
     });
 }
+
 module.exports = schema;
