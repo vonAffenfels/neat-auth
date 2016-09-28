@@ -53,7 +53,6 @@ module.exports = class Auth extends Module {
                         .findOne({
                             _id: id
                         })
-                        .cache(false)
                         .then((user) => {
                             if (!user) {
                                 return done(null, false);
@@ -79,7 +78,10 @@ module.exports = class Auth extends Module {
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/register", (req, res) => {
                     this.register(req.body).then((user) => {
                         res.json(user);
-                    }, res.mongooseErr);
+                    }, (err) => {
+                        res.status(400);
+                        res.json(err);
+                    });
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/activate-account", (req, res) => {
@@ -212,7 +214,7 @@ module.exports = class Auth extends Module {
                         res.status(400);
                         return res.json({
                             code: "password_mismatch",
-                            message: "Password reset token invalid"
+                            message: "Passwords do not match"
                         });
                     }
 
@@ -258,6 +260,11 @@ module.exports = class Auth extends Module {
 
             resolve(this);
         });
+    }
+
+    hasPermission(req, model, action, doc, query) {
+        // @TODO permission model
+        return true;
     }
 
     register(data) {

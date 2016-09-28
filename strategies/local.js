@@ -16,7 +16,6 @@ module.exports = function (passport, config, webserver) {
                     }
                 ]
             })
-            .cache(false)
             .exec()
             .then((user) => {
                 if (!user) {

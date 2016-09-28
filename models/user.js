@@ -29,6 +29,10 @@ var schema = new mongoose.Schema({
         default: false
     },
 
+    permissions: {
+        type: Object
+    },
+
     username: {
         type: String,
         required: true,
@@ -116,7 +120,7 @@ schema.path('username').validate(function (value, cb) {
 
     mongoose.model("user").findOne({
         username: regexp
-    }).cache(false).then((user) => {
+    }).then((user) => {
         if ((user && user.id !== self.id)) {
             return cb(false);
         }
@@ -171,7 +175,7 @@ schema.path('email').validate(function (value, cb) {
     }
     mongoose.model("user").findOne({
         email: regexp
-    }).cache(false).then((user) => {
+    }).then((user) => {
         if ((user && user.id !== self.id)) {
             return cb(false);
         }
