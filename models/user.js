@@ -29,10 +29,6 @@ var schema = new mongoose.Schema({
         default: false
     },
 
-    permissions: {
-        type: Object
-    },
-
     username: {
         type: String,
         required: true,
