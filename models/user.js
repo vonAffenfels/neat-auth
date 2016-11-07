@@ -1,10 +1,11 @@
 "use strict";
 
 // @IMPORTS
-var mongoose = require("mongoose");
+var Application = require("neat-base").Application;
 var crypto = require("crypto");
 var passwordHash = require('password-hash');
 var Promise = require("bluebird");
+var mongoose = require('mongoose');
 
 var schema = new mongoose.Schema({
     email: {
@@ -150,7 +151,7 @@ schema.path('username').validate(function (value, cb) {
         cb(false);
     }
 
-    mongoose.model("user").findOne({
+    Application.modules[Application.modules.auth.config.dbModuleName].getModel("user").findOne({
         username: regexp
     }).then((user) => {
         if ((user && user.id !== self.id)) {
@@ -195,6 +196,10 @@ schema.path('username').validate(function (value) {
 }, 'username is empty');
 
 schema.path('termsAndConditions.accepted').validate(function (value) {
+    if (!Application.modules.auth.config.enabled.terms) {
+        return true;
+    }
+
     return value;
 }, 'You must accept our Terms and Conditions');
 
@@ -205,7 +210,7 @@ schema.path('email').validate(function (value, cb) {
     } catch (e) {
         cb(false);
     }
-    mongoose.model("user").findOne({
+    Application.modules[Application.modules.auth.config.dbModuleName].getModel("user").findOne({
         email: regexp
     }).then((user) => {
         if ((user && user.id !== self.id)) {
@@ -220,12 +225,6 @@ schema.path('email').validate(function (value, cb) {
 
 schema.methods.checkPassword = function (val) {
     return passwordHash.verify(val, this.password);
-}
-
-schema.methods.loadChildren = function () {
-    return new Promise((resolve, reject) => {
-        resolve();
-    });
 }
 
 schema.methods.resetPassword = function () {

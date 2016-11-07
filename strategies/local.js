@@ -1,10 +1,10 @@
 var strategy = require("passport-local");
 var Tools = require("neat-base").Tools;
-var mongoose = require("mongoose");
+var Application = require("neat-base").Application;
 
 module.exports = function (passport, config, webserver) {
     passport.use('local', new strategy((username, password, done) => {
-        var userModel = mongoose.model("user");
+        var userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
         userModel
             .findOne({
                 $or: [

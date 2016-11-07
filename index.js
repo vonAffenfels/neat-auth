@@ -6,7 +6,6 @@ var Module = require("neat-base").Module;
 var Tools = require("neat-base").Tools;
 var passport = require("passport");
 var Promise = require("bluebird");
-var mongoose = require("mongoose");
 var crypto = require("crypto");
 
 module.exports = class Auth extends Module {
@@ -15,6 +14,10 @@ module.exports = class Auth extends Module {
         return {
             webserverModuleName: "webserver",
             dbModuleName: "database",
+            enabled: {
+                activation: false,
+                terms: false
+            },
             strategies: {
                 local: true
             }
@@ -47,7 +50,7 @@ module.exports = class Auth extends Module {
                  Deserialize user
                  */
                 passport.deserializeUser((id, done) => {
-                    var userModel = mongoose.model("user");
+                    var userModel = Application.modules[this.config.dbModuleName].getModel("user");
 
                     userModel
                         .findOne({
@@ -116,7 +119,7 @@ module.exports = class Auth extends Module {
                             });
                         }
 
-                        if (!user.activation.active) {
+                        if (!user.activation.active && this.config.enabled.activation) {
                             res.status(400);
                             return res.json({
                                 code: "not_activated",
@@ -179,7 +182,7 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/reset-password", (req, res) => {
-                    var user = mongoose.model("user");
+                    var user = Application.modules[this.config.dbModuleName].getModel("user");
                     user.findOne({
                         "email": req.body.email
                     }).then((doc) => {
@@ -222,7 +225,7 @@ module.exports = class Auth extends Module {
                         });
                     }
 
-                    var model = mongoose.model("user");
+                    var model = Application.modules[this.config.dbModuleName].getModel("user");
                     model.findOne({
                         "reset.token": req.body.token
                     }).then((doc) => {
@@ -266,9 +269,9 @@ module.exports = class Auth extends Module {
         });
     }
 
-    hasPermission(req, model, action, doc, query) {
+    hasPermission(req, modelName, action, doc, query) {
         try {
-            var model = mongoose.model(model);
+            var model = Application.modules[this.config.dbModuleName].getModel(modelName);
         } catch (e) {
             return false;
         }
@@ -297,7 +300,11 @@ module.exports = class Auth extends Module {
                     return false;
                 }
 
-                if (req.user.permissions.indexOf(model + "/" + action) !== -1) {
+                if (req.user.permissions.indexOf(modelName + "/" + action) !== -1) {
+                    return true;
+                }
+
+                if (req.user.permissions.indexOf(modelName) !== -1) {
                     return true;
                 }
             }
@@ -308,7 +315,7 @@ module.exports = class Auth extends Module {
 
     register(data) {
         return new Promise((resolve, reject) => {
-            var userModel = mongoose.model("user");
+            var userModel = Application.modules[this.config.dbModuleName].getModel("user");
             var user = new userModel(data);
 
             if (data.password !== data.password2) {
@@ -329,7 +336,7 @@ module.exports = class Auth extends Module {
 
     activate(token) {
         return new Promise((resolve, reject) => {
-            var userModel = mongoose.model("user");
+            var userModel = Application.modules[this.config.dbModuleName].getModel("user");
 
             if (!token) {
                 return reject({
@@ -374,7 +381,7 @@ module.exports = class Auth extends Module {
 
     resendActivationMail(usernameOrEmail) {
         return new Promise((resolve, reject) => {
-            var userModel = mongoose.model("user");
+            var userModel = Application.modules[this.config.dbModuleName].getModel("user");
             userModel
                 .findOne({
                     $or: [

@@ -1,6 +1,6 @@
 var strategy = require("passport-steam").Strategy;
 var Tools = require("neat-base").Tools;
-var mongoose = require("mongoose");
+var Application = require("neat-base").Application;
 
 module.exports = function (passport, config, webserver) {
 
@@ -12,7 +12,7 @@ module.exports = function (passport, config, webserver) {
             passReqToCallback: true
         },
         function (req, identifier, profile, done) {
-            var userModel = mongoose.model("user");
+            var userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
             if (req.user) {
                 req.user.set("oauth.steam", identifier);

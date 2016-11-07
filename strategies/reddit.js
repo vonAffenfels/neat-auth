@@ -1,6 +1,6 @@
 var strategy = require("passport-reddit").Strategy;
 var Tools = require("neat-base").Tools;
-var mongoose = require("mongoose");
+var Application = require("neat-base").Application;
 
 module.exports = function (passport, config, webserver) {
 
@@ -12,7 +12,7 @@ module.exports = function (passport, config, webserver) {
             passReqToCallback: true
         },
         function (req, token, tokenSecret, profile, done) {
-            var userModel = mongoose.model("user");
+            var userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
             if (req.user) {
                 req.user.set("oauth.reddit", profile.id);
