@@ -67,7 +67,7 @@ var schema = new mongoose.Schema({
         accepted: {
             type: Boolean,
             default: null,
-            required: true
+            required: Application.modules.auth.config.enabled.terms
         },
         acceptanceDate: {
             type: Date
