@@ -1,18 +1,20 @@
 "use strict";
 
 // @IMPORTS
-var Application = require("neat-base").Application;
-var Module = require("neat-base").Module;
-var Tools = require("neat-base").Tools;
-var passport = require("passport");
-var Promise = require("bluebird");
-var crypto = require("crypto");
+const Application = require("neat-base").Application;
+const Module = require("neat-base").Module;
+const Tools = require("neat-base").Tools;
+const passport = require("passport");
+const Promise = require("bluebird");
+const crypto = require("crypto");
+const passwordHash = require('password-hash');
 
 module.exports = class Auth extends Module {
 
     static defaultConfig() {
         return {
             webserverModuleName: "webserver",
+            ssoModuleName: "sso",
             dbModuleName: "database",
             enabled: {
                 activation: false,
@@ -28,7 +30,10 @@ module.exports = class Auth extends Module {
         return new Promise((resolve, reject) => {
             this.log.debug("Initializing...");
 
+            this.sso = Application.modules[this.config.ssoModuleName];
+
             Application.modules[this.config.dbModuleName].registerModel("user", require("./models/user.js"));
+            Application.modules[this.config.dbModuleName].registerModel("termversion", require("./models/termversion.js"));
 
             if (Application.modules[this.config.webserverModuleName]) {
                 /*
@@ -110,6 +115,7 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/login", (req, res) => {
+
                     passport.authenticate("local", (err, user, info) => {
                         if (!user) {
                             res.status(400);
@@ -119,40 +125,58 @@ module.exports = class Auth extends Module {
                             });
                         }
 
-                        if (!user.activation.active && this.config.enabled.activation) {
-                            res.status(400);
-                            return res.json({
-                                code: "not_activated",
-                                message: "Please activate your account"
-                            });
+                        let acceptProm = Promise.resolve();
+
+                        if (req.body.termsAndConditionsAccepted && this.config.enabled.terms) {
+                            user.acceptTermsAndConditions();
+                            acceptProm = user.save();
                         }
 
-                        if (user.banned) {
+                        acceptProm.then(() => {
+                            return user.checkTermsAndConditions();
+                        }).then(() => {
+
+                            if (!user.activation.active && this.config.enabled.activation) {
+                                res.status(400);
+                                return res.json({
+                                    code: "not_activated",
+                                    message: "Please activate your account"
+                                });
+                            }
+
+                            if (user.banned) {
+                                res.status(400);
+                                return res.json({
+                                    code: "banned",
+                                    message: "Your account has been banned. If you believe this to be a mistake, please contact us."
+                                });
+                            }
+
+                            req.logIn(user, function (err) {
+                                if (req.body.remember) {
+                                    req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000 * 12; // Cookie expires after one year
+                                } else {
+                                    req.session.cookie.expires = false; // Cookie expires at end of session
+                                }
+
+                                if (err) {
+                                    res.status(500);
+                                    return res.err(err);
+                                }
+
+                                Application.emit("user.login", {
+                                    user: user
+                                });
+
+                                res.json(user);
+                            });
+                        }, () => {
                             res.status(400);
                             return res.json({
-                                code: "banned",
-                                message: "Your account has been banned. If you believe this to be a mistake, please contact us"
+                                code: "terms_outdated",
+                                message: "You have to accept the current terms and conditions."
                             });
-                        }
-
-                        req.logIn(user, function (err) {
-                            if (req.body.remember) {
-                                req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000 * 12; // Cookie expires after one year
-                            } else {
-                                req.session.cookie.expires = false; // Cookie expires at end of session
-                            }
-
-                            if (err) {
-                                res.status(500);
-                                return res.err(err);
-                            }
-
-                            Application.emit("user.login", {
-                                user: user
-                            });
-
-                            res.json(user);
-                        });
+                        })
                     })(req, res)
                 });
 
@@ -179,6 +203,15 @@ module.exports = class Auth extends Module {
                     }
 
                     res.json(req.user);
+                });
+
+                Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/getCurrentTermsAndConditions", (req, res) => {
+                    let termsModel = Application.modules[this.config.dbModuleName].getModel("termversion");
+                    return termsModel.findOne().sort({
+                        _createdAt: -1
+                    }).select({content: req.body.content || false, versions: false}).then((currentTermsVersion) => {
+                        res.json(currentTermsVersion);
+                    });
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/reset-password", (req, res) => {
@@ -315,8 +348,8 @@ module.exports = class Auth extends Module {
 
     register(data) {
         return new Promise((resolve, reject) => {
-            var userModel = Application.modules[this.config.dbModuleName].getModel("user");
-            var user = new userModel(data);
+            let userModel = Application.modules[this.config.dbModuleName].getModel("user");
+            let user = new userModel(data);
 
             if (data.password !== data.password2) {
                 return reject({
@@ -324,13 +357,34 @@ module.exports = class Auth extends Module {
                 });
             }
 
-            return user.save().then(() => {
-                Application.emit("user.register", {
-                    user: user
+            if (!data.termsAndConditionsAccepted && this.config.enabled.terms) {
+                return reject({
+                    termsAndConditionsAccepted: "Please accept our terms and conditions"
                 });
+            }
 
-                resolve(user);
-            }, reject);
+            let ssoSync = Promise.resolve(true);
+            if (this.sso) {
+                ssoSync = this.sso.syncUserByEmail(data.email);
+            }
+
+            ssoSync.then(() => {
+                let ssoSyncUsername = Promise.resolve();
+
+                if (this.sso) {
+                    ssoSyncUsername = this.sso.syncUserByUsername(data.username);
+                }
+
+                return ssoSyncUsername;
+            }).then(() => {
+                return user.acceptTermsAndConditions().save().then(() => {
+                    Application.emit("user.register", {
+                        user: user
+                    });
+
+                    resolve(user);
+                }, reject);
+            });
         })
     }
 
@@ -411,5 +465,184 @@ module.exports = class Auth extends Module {
                     reject(err);
                 });
         });
+    }
+
+    modifySchema(modelName, schema) {
+        let selfModule = this;
+
+        if (modelName === "user") {
+            schema.path('username').validate(function (value, cb) {
+                var self = this;
+
+                try {
+                    var regexp = new RegExp("^" + value + "$", 'i');
+                } catch (e) {
+                    cb(false);
+                }
+
+                Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
+                    username: regexp
+                }).then((user) => {
+                    if ((user && user.id !== self.id)) {
+                        return cb(false);
+                    }
+                    cb(true);
+                }, () => {
+                    cb(false);
+                });
+            }, 'username duplicated');
+
+            schema.path('username').validate(function (value) {
+                if (value.length < 3) {
+                    return false;
+                }
+
+                return true;
+            }, 'username is too short 3-30');
+
+            schema.path('password').validate(function (value) {
+                if (value.length < 6) {
+                    return false;
+                }
+
+                return true;
+            }, 'password is too short, should be at least 6 characters long');
+
+            schema.path('username').validate(function (value) {
+                if (value.length > 30) {
+                    return false;
+                }
+
+                return true;
+            }, 'username is too long 3-30');
+
+            schema.path('username').validate(function (value) {
+                if (value.length === 0) {
+                    return false;
+                }
+
+                return true;
+            }, 'username is empty');
+
+            schema.path('email').validate(function (value, cb) {
+                var self = this;
+                try {
+                    var regexp = new RegExp("^" + value + "$", 'i');
+                } catch (e) {
+                    cb(false);
+                }
+                Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
+                    email: regexp
+                }).then((user) => {
+                    if ((user && user.id !== self.id)) {
+                        return cb(false);
+                    }
+
+                    cb(true);
+                }, () => {
+                    return cb(false);
+                });
+            }, 'email duplicate');
+
+            schema.path('termsAndConditions').validate(function (value, cb) {
+                if (!selfModule.config.enabled.terms) {
+                    return cb(true);
+                }
+
+                if (!value || !value.length) {
+                    return cb(false);
+                }
+
+                let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
+                return termsModel.findOne().sort({
+                    _createdAt: -1
+                }).then((currentTermsVersion) => {
+
+                    for (let i = 0; i < value.length; i++) {
+                        let acceptedTerms = value[i];
+
+                        if (acceptedTerms.version === currentTermsVersion._id) {
+                            return cb(true);
+                        }
+                    }
+
+                    cb(false);
+                });
+            }, 'termsAndConditions invalid');
+
+            schema.methods.checkPassword = function (val) {
+                return passwordHash.verify(val, this.password);
+            }
+
+            schema.methods.resetPassword = function () {
+                this.reset.token = crypto.randomBytes(24).toString("hex");
+                this.reset.active = true;
+                this.save(function (err) {
+                    if (!err) {
+                        return;
+                    } else {
+                        return err;
+                    }
+                });
+            }
+
+            schema.methods.acceptTermsAndConditions = function () {
+                this._acceptTermsAndConditions = true;
+                return this;
+            }
+
+            schema.methods.checkTermsAndConditions = function () {
+                return new Promise((resolve, reject) => {
+
+                    if (!selfModule.config.enabled.terms) {
+                        return resolve();
+                    }
+
+                    let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
+                    return termsModel.findOne().sort({
+                        _createdAt: -1
+                    }).then((currentTermsVersion) => {
+                        for (let i = 0; i < this.termsAndConditions.length; i++) {
+                            let acceptedTerms = this.termsAndConditions[i];
+
+                            if (acceptedTerms.version === currentTermsVersion._id) {
+                                return resolve();
+                            }
+                        }
+
+                        reject(new Error("invalid version"));
+                    });
+                });
+            }
+
+            schema.pre("validate", function (next) {
+                if (this._acceptTermsAndConditions && selfModule.config.enabled.terms) {
+                    let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
+                    return termsModel.findOne().sort({
+                        _createdAt: -1
+                    }).then((currentTermsVersion) => {
+
+                        if (!currentTermsVersion) {
+                            return next();
+                        }
+
+                        if (!this.termsAndConditions) {
+                            this.termsAndConditions = [];
+                        }
+
+                        this.termsAndConditions.push({
+                            version: currentTermsVersion._id
+                        });
+
+                        next();
+                    }, () => {
+                        return next();
+                    });
+                } else {
+                    next();
+                }
+            });
+        }
+
     }
 }

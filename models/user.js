@@ -1,13 +1,13 @@
 "use strict";
 
 // @IMPORTS
-var Application = require("neat-base").Application;
-var crypto = require("crypto");
-var passwordHash = require('password-hash');
-var Promise = require("bluebird");
-var mongoose = require('mongoose');
+const Application = require("neat-base").Application;
+const crypto = require("crypto");
+const passwordHash = require('password-hash');
+const Promise = require("bluebird");
+const mongoose = require('mongoose');
 
-var schema = new mongoose.Schema({
+let schema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
@@ -63,16 +63,20 @@ var schema = new mongoose.Schema({
         }
     },
 
-    termsAndConditions: {
-        accepted: {
-            type: Boolean,
-            default: null,
-            required: Application.modules.auth.config.enabled.terms
-        },
-        acceptanceDate: {
-            type: Date
+    termsAndConditions: [
+        {
+            version: {
+                type: String,
+                ref: "termversion"
+            },
+            date: {
+                type: Date,
+                default: function () {
+                    return new Date();
+                }
+            }
         }
-    },
+    ],
 
     activation: {
         active: {
@@ -120,7 +124,7 @@ var schema = new mongoose.Schema({
     toJSON: {
         virtuals: true,
         transform: function (doc) {
-            var obj = doc.toJSON({
+            let obj = doc.toJSON({
                 transform: false
             });
 
@@ -141,102 +145,5 @@ var schema = new mongoose.Schema({
         virtuals: true
     }
 });
-
-schema.path('username').validate(function (value, cb) {
-    var self = this;
-
-    try {
-        var regexp = new RegExp("^" + value + "$", 'i');
-    } catch (e) {
-        cb(false);
-    }
-
-    Application.modules[Application.modules.auth.config.dbModuleName].getModel("user").findOne({
-        username: regexp
-    }).then((user) => {
-        if ((user && user.id !== self.id)) {
-            return cb(false);
-        }
-        cb(true);
-    }, () => {
-        cb(false);
-    });
-}, 'username duplicated');
-
-schema.path('username').validate(function (value) {
-    if (value.length < 3) {
-        return false;
-    }
-
-    return true;
-}, 'username is too short 3-30');
-
-schema.path('password').validate(function (value) {
-    if (value.length < 6) {
-        return false;
-    }
-
-    return true;
-}, 'password is too short, should be at least 6 characters long');
-
-schema.path('username').validate(function (value) {
-    if (value.length > 30) {
-        return false;
-    }
-
-    return true;
-}, 'username is too long 3-30');
-
-schema.path('username').validate(function (value) {
-    if (value.length === 0) {
-        return false;
-    }
-
-    return true;
-}, 'username is empty');
-
-schema.path('termsAndConditions.accepted').validate(function (value) {
-    if (!Application.modules.auth.config.enabled.terms) {
-        return true;
-    }
-
-    return value;
-}, 'You must accept our Terms and Conditions');
-
-schema.path('email').validate(function (value, cb) {
-    var self = this;
-    try {
-        var regexp = new RegExp("^" + value + "$", 'i');
-    } catch (e) {
-        cb(false);
-    }
-    Application.modules[Application.modules.auth.config.dbModuleName].getModel("user").findOne({
-        email: regexp
-    }).then((user) => {
-        if ((user && user.id !== self.id)) {
-            return cb(false);
-        }
-
-        cb(true);
-    }, () => {
-        return cb(false);
-    });
-}, 'email duplicate');
-
-schema.methods.checkPassword = function (val) {
-    return passwordHash.verify(val, this.password);
-}
-
-schema.methods.resetPassword = function () {
-    this.reset.token = crypto.randomBytes(24).toString("hex");
-    this.reset.active = true;
-    this.save(function (err) {
-        if (!err) {
-            return;
-        } else {
-            return err;
-        }
-    });
-}
 
 module.exports = schema;
