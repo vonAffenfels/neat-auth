@@ -316,25 +316,21 @@ module.exports = class Auth extends Module {
         if (model.schema.options.permissions) {
             if (model.schema.options.permissions[action] === true) {
                 return true;
-            }
+            } else {
+                if (req.user && req.user.permissions) {
+                    if (req.user.permissions.indexOf(modelName + "/" + action) !== -1) {
+                        return true;
+                    }
 
-            if (model.schema.options.permissions[action] === false) {
-                if (!req.user || !req.user.permissions) {
-                    return false;
+                    if (req.user.permissions.indexOf(modelName) !== -1) {
+                        return true;
+                    }
                 }
 
-                if (req.user.permissions.indexOf(modelName + "/" + action) !== -1) {
-                    return true;
-                }
-
-                if (req.user.permissions.indexOf(modelName) !== -1) {
-                    return true;
-                }
-            }
-
-            if (model.schema.options.permissions[action] === "own") {
-                if (req.user && doc && (doc._createdBy + "" == req.user._id + "" || doc._id + "" == req.user._id + "")) {
-                    return true;
+                if (model.schema.options.permissions[action] === "own") {
+                    if (req.user && doc && (doc._createdBy + "" == req.user._id + "" || doc._id + "" == req.user._id + "")) {
+                        return true;
+                    }
                 }
             }
         }
