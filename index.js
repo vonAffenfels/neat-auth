@@ -318,16 +318,6 @@ module.exports = class Auth extends Module {
                 return true;
             }
 
-            if (model.schema.options.permissions[action] === "own") {
-                if (!req.user) {
-                    return false;
-                }
-
-                if (doc._createdBy + "" == req.user._id + "" || doc._id + "" == req.user._id + "") {
-                    return true;
-                }
-            }
-
             if (model.schema.options.permissions[action] === false) {
                 if (!req.user || !req.user.permissions) {
                     return false;
@@ -338,6 +328,12 @@ module.exports = class Auth extends Module {
                 }
 
                 if (req.user.permissions.indexOf(modelName) !== -1) {
+                    return true;
+                }
+            }
+
+            if (model.schema.options.permissions[action] === "own") {
+                if (req.user && doc && (doc._createdBy + "" == req.user._id + "" || doc._id + "" == req.user._id + "")) {
                     return true;
                 }
             }
