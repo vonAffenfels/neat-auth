@@ -99,6 +99,22 @@ let schema = new mongoose.Schema({
         }
     },
 
+    _authtoken: {
+        type: String,
+        default: null,
+        set: function (val) {
+            if (!val) {
+                return null;
+            }
+
+            if (typeof val === "string") {
+                return val.trim() || null;
+            }
+
+            return null;
+        }
+    },
+
     reset: {
         active: {
             type: Boolean,

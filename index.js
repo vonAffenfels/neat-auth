@@ -87,6 +87,53 @@ module.exports = class Auth extends Module {
                     require("./strategies/local.js")(passport, this.config.strategies.local, Application.modules[this.config.webserverModuleName]);
                 }
 
+                if (this.config.strategies.token) {
+                    Application.modules[this.config.webserverModuleName].addMiddleware((req, res, next) => {
+                        let token = req.headers["neat-auth"] || null;
+                        let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
+
+                        if (!token) {
+                            return next();
+                        }
+
+                        userModel
+                            .findOne({
+                                _authtoken: token
+                            })
+                            .exec()
+                            .then((doc) => {
+                                if (!doc) {
+                                    return next();
+                                }
+
+                                if (!doc.activation.active && this.config.enabled.activation) {
+                                    res.status(400);
+                                    return res.json({
+                                        code: "not_activated",
+                                        message: "Please activate your account"
+                                    });
+                                }
+
+                                if (doc.banned) {
+                                    res.status(400);
+                                    return res.json({
+                                        code: "banned",
+                                        message: "Your account has been banned. If you believe this to be a mistake, please contact us."
+                                    });
+                                }
+
+                                req.logIn(doc, function (err) {
+                                    Application.emit("user.tokenlogin", {
+                                        user: doc
+                                    });
+                                    return next();
+                                });
+                            }, (err) => {
+                                return next();
+                            })
+                    })
+                }
+
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/register", (req, res) => {
                     this.register(req.body).then((user) => {
                         res.json(user);
@@ -318,7 +365,7 @@ module.exports = class Auth extends Module {
                 return true;
             } else {
                 if (req.user && req.user.permissions) {
-                    if (req.user.permissions.indexOf(modelName + "/" + action) !== -1) {
+                    if (req.user.permissions.indexOf(modelName + "." + action) !== -1) {
                         return true;
                     }
 
