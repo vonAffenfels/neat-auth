@@ -145,6 +145,7 @@ let schema = new mongoose.Schema({
             });
 
             delete obj.password;
+            delete obj._authtoken;
 
             if (obj.activation) {
                 delete obj.activation.token;
