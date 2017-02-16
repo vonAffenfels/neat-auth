@@ -364,18 +364,20 @@ module.exports = class Auth extends Module {
             if (model.schema.options.permissions[action] === true) {
                 return true;
             } else {
-                if (req.user && req.user.permissions) {
-                    if (req.user.permissions.indexOf(modelName + "." + action) !== -1) {
-                        return true;
-                    }
+                if (!req.user) {
+                    return false;
+                }
 
-                    if (req.user.permissions.indexOf(modelName) !== -1) {
-                        return true;
-                    }
+                if (req.user.hasPermission(modelName + "." + action)) {
+                    return true;
+                }
+
+                if (req.user.hasPermission(modelName)) {
+                    return true;
                 }
 
                 if (model.schema.options.permissions[action] === "own") {
-                    if (req.user && doc && (doc._createdBy + "" == req.user._id + "" || doc._id + "" == req.user._id + "")) {
+                    if (req.user.isOwnerOfDoc(doc)) {
                         return true;
                     }
                 }
@@ -630,7 +632,29 @@ module.exports = class Auth extends Module {
                 return this;
             }
 
+            schema.methods.isOwnerOfDoc = function (doc) {
+                if (!doc) {
+                    return false;
+                }
+
+                // was created by user => ok
+                if (doc._createdBy + "" == this.user._id + "") {
+                    return true;
+                }
+
+                // IS the user itself => ok
+                if (doc._id + "" == this.user._id + "") {
+                    return true;
+                }
+
+                return false;
+            }
+
             schema.methods.hasPermission = function (val) {
+                if (!this.permissions || !this.permissions.length) {
+                    return false;
+                }
+
                 if (val instanceof Array) {
                     for (let i = 0; i < val.length; i++) {
                         let perm = val[i];
