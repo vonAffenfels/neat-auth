@@ -630,6 +630,29 @@ module.exports = class Auth extends Module {
                 return this;
             }
 
+            schema.methods.hasPermission = function (val) {
+                if (val instanceof Array) {
+                    for (let i = 0; i < val.length; i++) {
+                        let perm = val[i];
+
+                        // if a permission is missing, return false
+                        if (this.permissions.indexOf(perm) === -1) {
+                            return false;
+                        }
+                    }
+
+                    // all permissions found
+                    return true;
+                } else {
+                    if (this.permissions.indexOf(val) !== -1) {
+                        // permission found
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             schema.methods.checkTermsAndConditions = function () {
                 return new Promise((resolve, reject) => {
 
