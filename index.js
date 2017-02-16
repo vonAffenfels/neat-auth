@@ -106,6 +106,7 @@ module.exports = class Auth extends Module {
                                     return next();
                                 }
 
+
                                 if (!doc.activation.active && this.config.enabled.activation) {
                                     res.status(400);
                                     return res.json({
@@ -638,12 +639,12 @@ module.exports = class Auth extends Module {
                 }
 
                 // was created by user => ok
-                if (doc._createdBy + "" == this.user._id + "") {
+                if (doc._createdBy + "" == this._id + "") {
                     return true;
                 }
 
                 // IS the user itself => ok
-                if (doc._id + "" == this.user._id + "") {
+                if (doc._id + "" == this._id + "") {
                     return true;
                 }
 

@@ -26,11 +26,13 @@ let schema = new mongoose.Schema({
     },
 
     admin: {
+        permission: false,
         type: Boolean,
         default: false
     },
 
     username: {
+        permission: false,
         type: String,
         required: true,
         index: true,
@@ -63,27 +65,32 @@ let schema = new mongoose.Schema({
         }
     },
 
-    termsAndConditions: [
-        {
-            version: {
-                type: String,
-                ref: "termversion"
-            },
-            date: {
-                type: Date,
-                default: function () {
-                    return new Date();
+    termsAndConditions: {
+        permission: false,
+        type: [
+            {
+                version: {
+                    type: String,
+                    ref: "termversion"
+                },
+                date: {
+                    type: Date,
+                    default: function () {
+                        return new Date();
+                    }
                 }
             }
-        }
-    ],
+        ]
+    },
 
     activation: {
         active: {
+            permission: false,
             type: Boolean,
             default: false
         },
         token: {
+            permission: false,
             type: String,
             required: false,
             default: function () {
@@ -93,6 +100,7 @@ let schema = new mongoose.Schema({
     },
 
     lastActivity: {
+        permission: false,
         type: Date,
         default: function () {
             return new Date();
@@ -117,18 +125,23 @@ let schema = new mongoose.Schema({
 
     reset: {
         active: {
+            permission: false,
             type: Boolean,
             default: false
         },
         token: {
+            permission: false,
             type: String,
             required: false
         }
     },
 
-    permissions: [
-        String
-    ]
+    permissions: {
+        permission: false,
+        type: [
+            String
+        ]
+    }
 }, {
     permissions: {
         find: true,
