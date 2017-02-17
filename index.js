@@ -652,6 +652,11 @@ module.exports = class Auth extends Module {
             }
 
             schema.methods.hasPermission = function (val) {
+                // admin, access to everything
+                if(this.admin) {
+                    return true;
+                }
+
                 if (!this.permissions || !this.permissions.length) {
                     return false;
                 }
