@@ -660,14 +660,14 @@ module.exports = class Auth extends Module {
                     for (let i = 0; i < val.length; i++) {
                         let perm = val[i];
 
-                        // if a permission is missing, return false
-                        if (this.permissions.indexOf(perm) === -1) {
-                            return false;
+                        // if a permission is found
+                        if (this.permissions.indexOf(perm) !== -1) {
+                            return true;
                         }
                     }
 
-                    // all permissions found
-                    return true;
+                    // no permission found
+                    return false;
                 } else {
                     if (this.permissions.indexOf(val) !== -1) {
                         // permission found
