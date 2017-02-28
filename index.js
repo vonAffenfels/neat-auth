@@ -15,6 +15,7 @@ module.exports = class Auth extends Module {
         return {
             webserverModuleName: "webserver",
             ssoModuleName: "sso",
+            populateUser: [],
             dbModuleName: "database",
             enabled: {
                 activation: false,
@@ -61,6 +62,7 @@ module.exports = class Auth extends Module {
                         .findOne({
                             _id: id
                         })
+                        .populate(this.config.populateUser)
                         .then((user) => {
                             if (!user) {
                                 return done(null, false);
