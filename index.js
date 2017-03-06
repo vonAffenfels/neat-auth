@@ -696,6 +696,11 @@ module.exports = class Auth extends Module {
                     return termsModel.findOne().sort({
                         _createdAt: -1
                     }).then((currentTermsVersion) => {
+
+                        if(!currentTermsVersion) {
+                            return reject(new Error("invalid version"));
+                        }
+
                         for (let i = 0; i < this.termsAndConditions.length; i++) {
                             let acceptedTerms = this.termsAndConditions[i];
 
@@ -704,7 +709,7 @@ module.exports = class Auth extends Module {
                             }
                         }
 
-                        reject(new Error("invalid version"));
+                        return reject(new Error("invalid version"));
                     });
                 });
             }
