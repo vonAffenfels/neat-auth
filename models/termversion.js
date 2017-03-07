@@ -13,10 +13,12 @@ let schema = new mongoose.Schema({
         required: true
     },
 
-    content: {
-        type: String,
-        required: true
-    },
+    content: [
+        {
+            type: String,
+            required: true
+        }
+    ],
 
     url: {
         type: String,
@@ -41,17 +43,28 @@ let schema = new mongoose.Schema({
 });
 
 schema.pre("validate", function (next) {
+    let urls = this.url.split(",");
 
-    if (this.content) {
+    if (this.content && typeof this.content !== "string" && this.content.length === urls.length) { // check for string for legacy reasons
         return next();
     }
 
-    request(this.url, (err, res, body) => {
-        if (err || res.statusCode != 200) {
-            return next();
-        }
+    let contents = [];
+    Promise.map(urls, (url) => {
+        return new Promise((resolve, reject) => {
+            request(url, (err, res, body) => {
+                if (err || res.statusCode != 200) {
+                    return resolve();
+                }
 
-        this.content = body;
+                contents.push(body);
+                resolve();
+            });
+        });
+    }).then(() => {
+        this.content = contents;
+        next();
+    }, () => {
         next();
     });
 });
