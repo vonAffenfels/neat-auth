@@ -57,7 +57,6 @@ module.exports = class Auth extends Module {
                  */
                 passport.deserializeUser((id, done) => {
                     var userModel = Application.modules[this.config.dbModuleName].getModel("user");
-
                     userModel
                         .findOne({
                             _id: id
@@ -106,15 +105,6 @@ module.exports = class Auth extends Module {
                             .then((doc) => {
                                 if (!doc) {
                                     return next();
-                                }
-
-
-                                if (!doc.activation.active && this.config.enabled.activation) {
-                                    res.status(400);
-                                    return res.json({
-                                        code: "not_activated",
-                                        message: "Please activate your account"
-                                    });
                                 }
 
                                 if (doc.banned) {
