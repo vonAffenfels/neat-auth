@@ -583,6 +583,16 @@ module.exports = class Auth extends Module {
                     return cb(true);
                 }
 
+                // in case the user is being created (by an admin/user with permissions in the backend) dont check terms
+                if (this._createdBy + "" !== this._id + "" && !this._updatedBy) {
+                    return cb(true);
+                }
+
+                // in case the user is being updated (by an admin/user with permissions in the backend) dont check terms
+                if (this._updatedBy + "" !== this._id + "") {
+                    return cb(true);
+                }
+
                 if (!value || !value.length) {
                     return cb(false);
                 }
@@ -645,7 +655,7 @@ module.exports = class Auth extends Module {
 
             schema.methods.hasPermission = function (val) {
                 // admin, access to everything
-                if(this.admin) {
+                if (this.admin) {
                     return true;
                 }
 
@@ -687,7 +697,7 @@ module.exports = class Auth extends Module {
                         _createdAt: -1
                     }).then((currentTermsVersion) => {
 
-                        if(!currentTermsVersion) {
+                        if (!currentTermsVersion) {
                             return reject(new Error("invalid version"));
                         }
 
@@ -706,6 +716,7 @@ module.exports = class Auth extends Module {
 
             schema.pre("validate", function (next) {
                 if (this._acceptTermsAndConditions && selfModule.config.enabled.terms) {
+
                     let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
                     return termsModel.findOne().sort({
                         _createdAt: -1
