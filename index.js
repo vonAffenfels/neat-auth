@@ -132,7 +132,7 @@ module.exports = class Auth extends Module {
                         res.json(user);
                     }, (err) => {
                         res.status(400);
-                        res.json(err);
+                        res.err(err);
                     });
                 });
 
@@ -141,7 +141,7 @@ module.exports = class Auth extends Module {
                         res.json(user);
                     }, (err) => {
                         res.status(400);
-                        res.json(err);
+                        res.err(err);
                     });
                 });
 
@@ -150,7 +150,7 @@ module.exports = class Auth extends Module {
                         res.json(user);
                     }, (err) => {
                         res.status(400);
-                        res.json(err);
+                        res.err(err);
                     });
                 });
 
@@ -234,6 +234,7 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/current", (req, res) => {
+
                     if (!req.user) {
                         res.status(400);
                         return res.json({
