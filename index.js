@@ -400,14 +400,14 @@ module.exports = class Auth extends Module {
 
             let ssoSync = Promise.resolve(true);
             if (this.sso) {
-                ssoSync = this.sso.syncUserByEmail(data.email);
+                ssoSync = this.sso.syncUserByEmail(data.email, data.password);
             }
 
             ssoSync.then(() => {
                 let ssoSyncUsername = Promise.resolve();
 
                 if (this.sso) {
-                    ssoSyncUsername = this.sso.syncUserByUsername(data.username);
+                    ssoSyncUsername = this.sso.syncUserByUsername(data.username, data.password);
                 }
 
                 return ssoSyncUsername;

@@ -11,14 +11,14 @@ module.exports = function (passport, config, webserver) {
 
         let ssoSync = Promise.resolve(true);
         if (Application.modules.auth.sso) {
-            ssoSync = Application.modules.auth.sso.syncUserByEmail(username);
+            ssoSync = Application.modules.auth.sso.syncUserByEmail(username, password);
         }
 
         ssoSync.then((val) => {
             let ssoSyncUsername = Promise.resolve();
 
             if (!val && Application.modules.auth.sso) {
-                ssoSyncUsername = Application.modules.auth.sso.syncUserByUsername(username);
+                ssoSyncUsername = Application.modules.auth.sso.syncUserByUsername(username, password);
             }
 
             return ssoSyncUsername;
