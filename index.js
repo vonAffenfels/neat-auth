@@ -176,7 +176,7 @@ module.exports = class Auth extends Module {
                             return user.checkTermsAndConditions();
                         }).then(() => {
 
-                            if (!user.activation.active && this.config.enabled.activation) {
+                            if (!user.activation.active && this.config.enabled.activation && !this.config.allowLoginWithoutActivation) {
                                 res.status(400);
                                 return res.json({
                                     code: "not_activated",
