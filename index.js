@@ -629,11 +629,14 @@ module.exports = class Auth extends Module {
 
             schema.methods.resetPassword = function () {
                 const userModel = Application.modules[selfModule.config.dbModuleName].getModel("user");
+                let token = crypto.randomBytes(24).toString("hex");
+                this.set("reset.token", token);
+                this.set("reset.active", true);
                 return userModel.update({
                     _id: this.get("_id")
                 }, {
                     $set: {
-                        "reset.token": crypto.randomBytes(24).toString("hex"),
+                        "reset.token": token,
                         "reset.active": true
                     }
                 }).exec()
