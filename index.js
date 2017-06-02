@@ -257,6 +257,14 @@ module.exports = class Auth extends Module {
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/reset-password", (req, res) => {
                     var user = Application.modules[this.config.dbModuleName].getModel("user");
+
+                    if (!req.body.email) {
+                        return res.status(400).json({
+                            code: "email_missing",
+                            message: "Email missing"
+                        })
+                    }
+
                     user.findOne({
                         "email": req.body.email
                     }).then((doc) => {
@@ -620,15 +628,15 @@ module.exports = class Auth extends Module {
             }
 
             schema.methods.resetPassword = function () {
-                this.reset.token = crypto.randomBytes(24).toString("hex");
-                this.reset.active = true;
-                this.save(function (err) {
-                    if (!err) {
-                        return;
-                    } else {
-                        return err;
+                const userModel = Application.modules[selfModule.config.dbModuleName].getModel("user");
+                return userModel.update({
+                    _id: this.get("_id")
+                }, {
+                    $set: {
+                        "reset.token": crypto.randomBytes(24).toString("hex"),
+                        "reset.active": true
                     }
-                });
+                }).exec()
             }
 
             schema.methods.acceptTermsAndConditions = function () {
