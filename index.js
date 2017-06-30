@@ -146,7 +146,7 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/resend-activation", (req, res) => {
-                    this.resendActivationMail(req.body.username).then((user) => {
+                    this.resendActivationMail(req.body).then((user) => {
                         res.json(user);
                     }, (err) => {
                         res.status(400);
@@ -271,7 +271,8 @@ module.exports = class Auth extends Module {
                         if (doc) {
                             doc.resetPassword();
                             Application.emit("user.reset", {
-                                user: doc
+                                user: doc,
+                                data: req.body
                             });
                             res.json({
                                 success: true
@@ -422,7 +423,8 @@ module.exports = class Auth extends Module {
             }).then(() => {
                 return user.acceptTermsAndConditions().save().then(() => {
                     Application.emit("user.register", {
-                        user: user
+                        user: user,
+                        data: data
                     });
 
                     resolve(user);
@@ -476,7 +478,8 @@ module.exports = class Auth extends Module {
         })
     }
 
-    resendActivationMail(usernameOrEmail) {
+    resendActivationMail(data) {
+        let usernameOrEmail = data.username;
         return new Promise((resolve, reject) => {
             var userModel = Application.modules[this.config.dbModuleName].getModel("user");
             userModel
@@ -500,7 +503,8 @@ module.exports = class Auth extends Module {
                     }
 
                     Application.emit("user.register", {
-                        user: user
+                        user: user,
+                        data: data
                     });
 
                     resolve();
