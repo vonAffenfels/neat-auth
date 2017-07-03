@@ -152,6 +152,7 @@ let schema = new mongoose.Schema({
     },
     toJSON: {
         virtuals: true,
+        getters: true,
         transform: function (doc) {
             let obj = doc.toJSON({
                 transform: false
@@ -172,6 +173,7 @@ let schema = new mongoose.Schema({
         }
     },
     toObject: {
+        getters: true,
         virtuals: true
     }
 });

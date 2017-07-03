@@ -165,14 +165,21 @@ module.exports = class Auth extends Module {
                             });
                         }
 
-                        let acceptProm = Promise.resolve();
-
-                        if (req.body.termsAndConditionsAccepted && this.config.enabled.terms) {
-                            user.acceptTermsAndConditions();
-                            acceptProm = user.save();
+                        let userPopulateProm = Promise.resolve();
+                        if (this.config.populateUser && this.config.populateUser.length) {
+                            userPopulateProm = user.populate(this.config.populateUser).execPopulate();
                         }
 
-                        acceptProm.then(() => {
+                        userPopulateProm.then(() => {
+                            let acceptProm = Promise.resolve();
+
+                            if (req.body.termsAndConditionsAccepted && this.config.enabled.terms) {
+                                user.acceptTermsAndConditions();
+                                acceptProm = user.save();
+                            }
+
+                            return acceptProm;
+                        }).then(() => {
                             return user.checkTermsAndConditions();
                         }).then(() => {
 
@@ -208,7 +215,7 @@ module.exports = class Auth extends Module {
                                     user: user
                                 });
 
-                                res.json(user);
+                                res.json(user.toObject({virtuals: true, getters: true}));
                             });
                         }, () => {
                             res.status(400);
@@ -243,7 +250,7 @@ module.exports = class Auth extends Module {
                         });
                     }
 
-                    res.json(req.user);
+                    res.json(req.user.toObject({virtuals: true, getters: true}));
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/getCurrentTermsAndConditions", (req, res) => {
