@@ -87,6 +87,9 @@ module.exports = class Auth extends Module {
                 if (this.config.strategies.local) {
                     require("./strategies/local.js")(passport, this.config.strategies.local, Application.modules[this.config.webserverModuleName]);
                 }
+                if (this.config.strategies.facebook) {
+                    require("./strategies/facebook.js")(passport, this.config.strategies.facebook, Application.modules[this.config.webserverModuleName]);
+                }
 
                 if (this.config.strategies.token) {
                     Application.modules[this.config.webserverModuleName].addMiddleware((req, res, next) => {
