@@ -173,7 +173,8 @@ let schema = new mongoose.Schema({
     },
     toObject: {
         virtuals: true
-    }
+    },
+    versionCount: 5
 });
 
 module.exports = schema;
