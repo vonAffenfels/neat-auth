@@ -87,6 +87,9 @@ module.exports = class Auth extends Module {
                 if (this.config.strategies.local) {
                     require("./strategies/local.js")(passport, this.config.strategies.local, Application.modules[this.config.webserverModuleName]);
                 }
+                if (this.config.strategies.facebook) {
+                    require("./strategies/facebook.js")(passport, this.config.strategies.facebook, Application.modules[this.config.webserverModuleName]);
+                }
 
                 if (this.config.strategies.token) {
                     Application.modules[this.config.webserverModuleName].addMiddleware((req, res, next) => {
@@ -146,7 +149,7 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/resend-activation", (req, res) => {
-                    this.resendActivationMail(req.body.username).then((user) => {
+                    this.resendActivationMail(req.body).then((user) => {
                         res.json(user);
                     }, (err) => {
                         res.status(400);
@@ -165,14 +168,21 @@ module.exports = class Auth extends Module {
                             });
                         }
 
-                        let acceptProm = Promise.resolve();
-
-                        if (req.body.termsAndConditionsAccepted && this.config.enabled.terms) {
-                            user.acceptTermsAndConditions();
-                            acceptProm = user.save();
+                        let userPopulateProm = Promise.resolve();
+                        if (this.config.populateUser && this.config.populateUser.length) {
+                            userPopulateProm = user.populate(this.config.populateUser).execPopulate();
                         }
 
-                        acceptProm.then(() => {
+                        userPopulateProm.then(() => {
+                            let acceptProm = Promise.resolve();
+
+                            if (req.body.termsAndConditionsAccepted && this.config.enabled.terms) {
+                                user.acceptTermsAndConditions();
+                                acceptProm = user.save();
+                            }
+
+                            return acceptProm;
+                        }).then(() => {
                             return user.checkTermsAndConditions();
                         }).then(() => {
 
@@ -208,7 +218,7 @@ module.exports = class Auth extends Module {
                                     user: user
                                 });
 
-                                res.json(user);
+                                res.json(user.toObject({virtuals: true, getters: true}));
                             });
                         }, () => {
                             res.status(400);
@@ -243,7 +253,7 @@ module.exports = class Auth extends Module {
                         });
                     }
 
-                    res.json(req.user);
+                    res.json(req.user.toObject({virtuals: true, getters: true}));
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/getCurrentTermsAndConditions", (req, res) => {
@@ -271,7 +281,8 @@ module.exports = class Auth extends Module {
                         if (doc) {
                             doc.resetPassword();
                             Application.emit("user.reset", {
-                                user: doc
+                                user: doc,
+                                data: req.body
                             });
                             res.json({
                                 success: true
@@ -422,7 +433,8 @@ module.exports = class Auth extends Module {
             }).then(() => {
                 return user.acceptTermsAndConditions().save().then(() => {
                     Application.emit("user.register", {
-                        user: user
+                        user: user,
+                        data: data
                     });
 
                     resolve(user);
@@ -476,7 +488,8 @@ module.exports = class Auth extends Module {
         })
     }
 
-    resendActivationMail(usernameOrEmail) {
+    resendActivationMail(data) {
+        let usernameOrEmail = data.username;
         return new Promise((resolve, reject) => {
             var userModel = Application.modules[this.config.dbModuleName].getModel("user");
             userModel
@@ -500,7 +513,8 @@ module.exports = class Auth extends Module {
                     }
 
                     Application.emit("user.register", {
-                        user: user
+                        user: user,
+                        data: data
                     });
 
                     resolve();

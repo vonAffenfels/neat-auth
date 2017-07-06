@@ -1,6 +1,6 @@
 {
   "name": "neat-auth",
-  "version": "1.0.24",
+  "version": "1.1.1",
   "description": "Authentication module",
   "main": "index.js",
   "author": "",
@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "passport": "^0.3.2",
+    "passport-facebook": "^2.1.1",
+    "passport-facebook-token": "^3.3.0",
     "passport-local": "^1.0.0",
     "passport-reddit": "^0.2.4",
     "passport-steam": "^1.0.5",
