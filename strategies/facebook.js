@@ -1,3 +1,5 @@
+"use strict";
+
 let strategy = require("passport-facebook").Strategy;
 let tokenStrategy = require("passport-facebook-token");
 let Tools = require("neat-base").Tools;
@@ -93,23 +95,31 @@ module.exports = function (passport, config, webserver) {
 
     passport.use(
         new strategy({
-            clientID: config.facebookId,
-            clientSecret: config.facebookSecret,
-            callbackURL: config.facebookReturn,
-            profileFields: ['id', 'displayName', 'email'],
-            enableProof: true
-        },  function (req, token, tokenSecret, profile, done) {
-            return strategyCallback(req, profile, done);
-        }
-    ));
+                clientID: config.facebookId,
+                clientSecret: config.facebookSecret,
+                callbackURL: config.facebookReturn,
+                profileFields: [
+                    'id',
+                    'displayName',
+                    'email'
+                ],
+                enableProof: true
+            }, function (req, token, tokenSecret, profile, done) {
+                return strategyCallback(req, profile, done);
+            }
+        ));
 
     passport.use(
         new tokenStrategy({
             clientID: config.facebookId,
             clientSecret: config.facebookSecret,
-            profileFields: ['id', 'displayName', 'email'],
+            profileFields: [
+                'id',
+                'displayName',
+                'email'
+            ],
             enableProof: true
-        }, function(accessToken, refreshToken, profile, done) {
+        }, function (accessToken, refreshToken, profile, done) {
             return strategyCallback(null, profile, done);
         })
     )
@@ -117,7 +127,7 @@ module.exports = function (passport, config, webserver) {
     webserver.addRoute("get", "/auth/facebook", function (req, res, next) {
         req.session.returnTo = req.query.returnTo || "/";
         req.session.returnJSON = req.headers['user-agent'] === "APP-OAUTH";
-        passport.authenticate('facebook', { scope: ['email'] })(req, res, next);
+        passport.authenticate('facebook', {scope: ['email']})(req, res, next);
     });
 
     webserver.addRoute("get", "/auth/facebook/token", function (req, res, next) {
