@@ -276,7 +276,7 @@ module.exports = class Auth extends Module {
                     }
 
                     user.findOne({
-                        "email": req.body.email
+                        "email": req.body.email.toLowerCase().trim()
                     }).then((doc) => {
                         if (doc) {
                             doc.resetPassword();
