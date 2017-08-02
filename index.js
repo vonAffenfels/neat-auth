@@ -466,8 +466,8 @@ module.exports = class Auth extends Module {
 
                 if (doc.activation.active) {
                     return reject({
-                        code: "invalid_token",
-                        message: "The supplied token is invalid"
+                        code: "already_used",
+                        message: "The supplied token has already been used"
                     });
                 }
 
