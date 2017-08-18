@@ -9,6 +9,18 @@ module.exports = function (passport, config, webserver) {
     passport.use('local', new strategy((username, password, done) => {
         let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
+        if (typeof username === "string") {
+            username = username.trim();
+        } else {
+            username = null;
+        }
+
+        if (typeof password === "string") {
+            password = password.trim();
+        } else {
+            password = null;
+        }
+
         let ssoSync = Promise.resolve(true);
         if (Application.modules.auth.sso) {
             ssoSync = Application.modules.auth.sso.syncUserByEmail(username, password);
