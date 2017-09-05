@@ -376,6 +376,10 @@ module.exports = class Auth extends Module {
         if (model.schema.options.permissions) {
             if (model.schema.options.permissions[action] === true) {
                 return true;
+            } else if (model.schema.options.permissions[action] === "auth") {
+                if (req.user) {
+                    return true;
+                }
             } else {
                 if (!req.user) {
                     return false;
