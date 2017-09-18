@@ -543,7 +543,7 @@ module.exports = class Auth extends Module {
 
                 Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
                     username: regexp
-                }).then((user) => {
+                }).read("primary").then((user) => {
                     if ((user && user.id !== self.id)) {
                         return cb(false);
                     }
@@ -594,7 +594,7 @@ module.exports = class Auth extends Module {
                 }
                 Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
                     email: regexp
-                }).then((user) => {
+                }).read("primary").then((user) => {
                     if ((user && user.id !== self.id)) {
                         return cb(false);
                     }
