@@ -104,6 +104,7 @@ module.exports = class Auth extends Module {
                             .findOne({
                                 _authtoken: token
                             })
+			    .populate(this.config.populateUser)
                             .exec()
                             .then((doc) => {
                                 if (!doc) {
