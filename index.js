@@ -216,7 +216,8 @@ module.exports = class Auth extends Module {
                                 }
 
                                 Application.emit("user.login", {
-                                    user: user
+                                    user: user,
+                                    data: req.body
                                 });
 
                                 res.json(user.toObject({virtuals: true, getters: true}));
@@ -346,7 +347,8 @@ module.exports = class Auth extends Module {
                                 }
 
                                 Application.emit("user.login", {
-                                    user: doc
+                                    user: doc,
+                                    data: req.body
                                 });
 
                                 res.json(doc);
