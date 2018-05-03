@@ -104,6 +104,7 @@ module.exports = class Auth extends Module {
                             .findOne({
                                 _authtoken: token
                             })
+			    .populate(this.config.populateUser)
                             .exec()
                             .then((doc) => {
                                 if (!doc) {
@@ -215,7 +216,8 @@ module.exports = class Auth extends Module {
                                 }
 
                                 Application.emit("user.login", {
-                                    user: user
+                                    user: user,
+                                    data: req.body
                                 });
 
                                 res.json(user.toObject({virtuals: true, getters: true}));
@@ -345,7 +347,8 @@ module.exports = class Auth extends Module {
                                 }
 
                                 Application.emit("user.login", {
-                                    user: doc
+                                    user: doc,
+                                    data: req.body
                                 });
 
                                 res.json(doc);
