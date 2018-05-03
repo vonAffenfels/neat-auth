@@ -245,7 +245,7 @@ module.exports = class Auth extends Module {
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/current", (req, res) => {
 
-                    if (!req.user) {
+                    if (!req.user || (!this.config.allowLoginWithoutActivation && (!req.user.activation || !req.user.activation.active))) {
                         res.status(400);
                         return res.json({
                             code: "not_loggedin",
