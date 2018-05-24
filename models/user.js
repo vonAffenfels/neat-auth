@@ -22,7 +22,8 @@ let schema = new mongoose.Schema({
         reddit: String,
         steam: String,
         facebook: String,
-        google: String
+        google: String,
+        password: String
     },
 
     admin: {

@@ -104,7 +104,7 @@ module.exports = class Auth extends Module {
                             .findOne({
                                 _authtoken: token
                             })
-			    .populate(this.config.populateUser)
+                            .populate(this.config.populateUser)
                             .exec()
                             .then((doc) => {
                                 if (!doc) {
@@ -255,7 +255,19 @@ module.exports = class Auth extends Module {
                         });
                     }
 
-                    res.json(req.user.toObject({virtuals: true, getters: true}));
+                    if (!this.config.allowLoginWithoutTerms) {
+                        return req.user.checkTermsAndConditions().then(() => {
+                            res.json(req.user.toObject({virtuals: true, getters: true}));
+                        }, (err) => {
+                            req.logout();
+                            return res.json({
+                                code: "terms_outdated",
+                                message: "You have to accept the current terms and conditions."
+                            });
+                        })
+                    } else {
+                        res.json(req.user.toObject({virtuals: true, getters: true}));
+                    }
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/getCurrentTermsAndConditions", (req, res) => {
