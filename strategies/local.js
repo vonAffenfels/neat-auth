@@ -36,9 +36,7 @@ module.exports = function (passport, config, webserver) {
                             return cb(err);
                         }
 
-                        return connectedUser.setLoggedIn(function () {
-                            return cb(null, connectedUser);
-                        });
+                        return cb(null, connectedUser);
                     });
                 }
 
