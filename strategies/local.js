@@ -11,6 +11,7 @@ module.exports = function (passport, config, webserver) {
 
     function oauthresponseHandler(accessToken, refreshToken, profile, cb) {
         request(config.password_grant.dataUrl + accessToken, function (err, res, dpvUser) {
+            console.log(dpvUser);
 
             try {
                 dpvUser = JSON.parse(dpvUser);
@@ -87,39 +88,60 @@ module.exports = function (passport, config, webserver) {
     if (config !== true && config.password_grant) {
 
         passport.use('local', new strategy((username, password, done) => {
-            return request({
-                url: config.password_grant.tokenURL,
-                method: "get",
-                qs: {
-                    grant_type: "password",
-                    username: username,
-                    password: password,
-                    client_id: config.password_grant.clientID,
-                    client_secret: config.password_grant.clientSecret
-                }
-            }, function (err, res, body) {
 
-                if (err) {
-                    return done("invalid_credentials");
-                }
+            let usernameProm = Promise.resolve(username);
 
-                try {
-                    body = JSON.parse(body);
+            if (config.password_grant.onlyUseEmail) {
+                usernameProm = new Promise((resolve, reject) => {
+                    let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
-                    if (body.error) {
+                    return userModel.findOne({
+                        username: username
+                    }).select({email: 1}).then((user) => {
+                        if (!user) {
+                            return resolve(username);
+                        }
+
+                        return resolve(user.email);
+                    });
+                });
+            }
+
+
+            return usernameProm.then((username) => {
+                return request({
+                    url: config.password_grant.tokenURL,
+                    method: "get",
+                    qs: {
+                        grant_type: "password",
+                        username: username,
+                        password: password,
+                        client_id: config.password_grant.clientID,
+                        client_secret: config.password_grant.clientSecret
+                    }
+                }, function (err, res, body) {
+                    if (err) {
                         return done("invalid_credentials");
                     }
-                } catch (e) {
-                    return done("invalid_credentials");
-                }
 
-                oauthresponseHandler(body.access_token, body.refresh_token, null, function (err, user) {
+                    try {
+                        body = JSON.parse(body);
 
-                    if (err) {
-                        return done(err);
+                        if (body.error) {
+                            return done("invalid_credentials");
+                        }
+                    } catch (e) {
+                        return done("invalid_credentials");
                     }
 
-                    done(null, user, {});
+                    oauthresponseHandler(body.access_token, body.refresh_token, null, function (err, user) {
+
+                        if (err) {
+                            return done(err);
+                        }
+
+                        done(null, user, {});
+                    });
                 });
             });
         }));
