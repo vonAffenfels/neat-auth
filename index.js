@@ -220,7 +220,7 @@ module.exports = class Auth extends Module {
                                     data: req.body
                                 });
 
-                                res.json(user.toObject({virtuals: true, getters: true}));
+                                res.json(user);
                             });
                         }, () => {
                             res.status(400);

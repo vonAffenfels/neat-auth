@@ -164,6 +164,11 @@ let schema = new mongoose.Schema({
 
             if (obj.activation) {
                 delete obj.activation.token;
+
+
+                if(Application.modules.auth.config.allowLoginWithoutActivation) {
+                    obj.activation.active = true;
+                }
             }
 
             if (obj.reset) {

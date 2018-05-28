@@ -104,7 +104,7 @@ module.exports = function (passport, config, webserver) {
                     if (err) {
                         return done(err);
                     }
-
+                    
                     done(null, user, {});
                 });
             });
