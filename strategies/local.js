@@ -5,6 +5,7 @@ const Tools = require("neat-base").Tools;
 const Application = require("neat-base").Application;
 const Promise = require("bluebird");
 const request = require("request");
+const crypto = require("crypto");
 
 module.exports = function (passport, config, webserver) {
 
