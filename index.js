@@ -640,6 +640,11 @@ module.exports = class Auth extends Module {
                     return cb(true);
                 }
 
+                // is a connected user, we can only check this on login in this case
+                if (this.oauth && this.oauth.password) {
+                    return cb(true);
+                }
+
                 if (!value || !value.length) {
                     return cb(false);
                 }

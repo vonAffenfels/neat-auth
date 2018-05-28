@@ -72,6 +72,7 @@ module.exports = function (passport, config, webserver) {
                     }
 
                     unconnectedUser.save(function (err) {
+                        console.log(err);
                         if (err) {
                             return cb(err);
                         }
@@ -113,6 +114,7 @@ module.exports = function (passport, config, webserver) {
                 }
 
                 oauthresponseHandler(body.access_token, body.refresh_token, null, function (err, user) {
+
                     if (err) {
                         return done(err);
                     }
