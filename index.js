@@ -561,8 +561,6 @@ module.exports = class Auth extends Module {
                         username: regexp
                     }).read("primary").then((user) => {
 
-                        console.log(user.id, self.id);
-
                         if ((user && user.id !== self.id)) {
                             return cb(false);
                         }
