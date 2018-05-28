@@ -32,6 +32,12 @@ module.exports = function (passport, config, webserver) {
                 "oauth.password": dpvUser.id
             }, function (err, connectedUser) {
                 if (connectedUser) {
+                    if (dpvUser.nickname) {
+                        connectedUser.set("username", dpvUser.nickname);
+                    }
+                    if (dpvUser.email) {
+                        connectedUser.set("email", dpvUser.email);
+                    }
                     return connectedUser.save(function (err) {
                         if (err) {
                             return cb(err);
@@ -51,13 +57,19 @@ module.exports = function (passport, config, webserver) {
                     if (!unconnectedUser) {
                         var hashedUsername = crypto.createHash('md5').update(dpvUser.username || dpvUser.email).digest("hex");
                         unconnectedUser = new userModel({
-                            username: dpvUser.username || hashedUsername.substr(0, 12),
+                            username: dpvUser.nickname || hashedUsername.substr(0, 12),
                             password: hashedUsername,
                             email: dpvUser.email
                         });
                     }
 
                     unconnectedUser.set("oauth.password", dpvUser.id);
+                    if (dpvUser.nickname) {
+                        unconnectedUser.set("username", dpvUser.nickname);
+                    }
+                    if (dpvUser.email) {
+                        unconnectedUser.set("email", dpvUser.email);
+                    }
 
                     unconnectedUser.save(function (err) {
                         if (err) {
@@ -104,7 +116,7 @@ module.exports = function (passport, config, webserver) {
                     if (err) {
                         return done(err);
                     }
-                    
+
                     done(null, user, {});
                 });
             });
