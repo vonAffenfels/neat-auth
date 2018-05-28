@@ -11,8 +11,6 @@ module.exports = function (passport, config, webserver) {
 
     function oauthresponseHandler(accessToken, refreshToken, profile, cb) {
         request(config.password_grant.dataUrl + accessToken, function (err, res, dpvUser) {
-            console.log(dpvUser);
-
             try {
                 dpvUser = JSON.parse(dpvUser);
             } catch (e) {
@@ -73,7 +71,6 @@ module.exports = function (passport, config, webserver) {
                     }
 
                     unconnectedUser.save(function (err) {
-                        console.log(err);
                         if (err) {
                             return cb(err);
                         }

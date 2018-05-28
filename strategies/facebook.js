@@ -132,7 +132,6 @@ module.exports = function (passport, config, webserver) {
 
     webserver.addRoute("get", "/auth/facebook/token", function (req, res, next) {
         passport.authenticate('facebook-token')(req, res, (err) => {
-            console.log(req.query);
             if (req.session.returnJSON || req.query.json) {
                 delete req.session.returnJSON;
 
@@ -147,7 +146,6 @@ module.exports = function (passport, config, webserver) {
             }
 
             if (err) {
-                console.log(err);
                 return res.redirect("/");
             } else {
                 let returnTo = req.session.returnTo;
@@ -177,7 +175,6 @@ module.exports = function (passport, config, webserver) {
             }
 
             if (err) {
-                console.log(err);
                 return res.redirect("/");
             } else {
                 let returnTo = req.session.returnTo;
