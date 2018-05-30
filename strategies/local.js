@@ -25,6 +25,11 @@ module.exports = function (passport, config, webserver) {
                 return cb(err);
             }
 
+
+            if (dpvUser.email) {
+                dpvUser.email = String(dpvUser.email).toLowerCase();
+            }
+
             let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
             userModel.findOne({
