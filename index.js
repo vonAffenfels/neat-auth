@@ -132,6 +132,12 @@ module.exports = class Auth extends Module {
                 }
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/register", (req, res) => {
+
+                    if(this.config.registrationDisabled) {
+                        res.status(400);
+                        return res.err("registration disabled");
+                    }
+
                     this.register(req.body).then((user) => {
                         res.json(user);
                     }, (err) => {
