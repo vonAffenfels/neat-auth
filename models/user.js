@@ -44,7 +44,7 @@ let schema = new mongoose.Schema({
 
     password: {
         type: String,
-        required: true,
+        required: false,
         toJSON: false,
         index: true,
         set: function (val) {
