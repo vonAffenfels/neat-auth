@@ -151,6 +151,7 @@ let schema = new mongoose.Schema({
         save: "own",
         remove: "own"
     },
+    usePushEach: true,
     toJSON: {
         virtuals: true,
         getters: true,
