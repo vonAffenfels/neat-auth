@@ -76,13 +76,13 @@ module.exports = class Auth extends Module {
                             }).then(() => {
                                 done(null, user);
                             }, (err) => {
-                                console.error(err);
+                                console.error("user update error", err);
                                 done(err);
                             });
 
                         }, (err) => {
                             // DEBUG
-                            console.error(err);
+                            console.error("deserialize error", err);
                             done(err);
                         });
                 });
@@ -132,7 +132,7 @@ module.exports = class Auth extends Module {
                                     return next();
                                 });
                             }, (err) => {
-                                console.error(err);
+                                console.error("user model populate", err);
                                 return next();
                             })
                     })
@@ -245,10 +245,10 @@ module.exports = class Auth extends Module {
                                     data: req.body
                                 });
 
-                                res.json(user);
+                                return res.json(user);
                             });
                         }, (err) => {
-                            console.error(err);
+                            console.error("login error:", err);
                             res.status(400);
                             return res.json({
                                 code: "terms_outdated",
