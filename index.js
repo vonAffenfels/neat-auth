@@ -76,10 +76,13 @@ module.exports = class Auth extends Module {
                             }).then(() => {
                                 done(null, user);
                             }, (err) => {
+                                console.error(err);
                                 done(err);
                             });
 
                         }, (err) => {
+                            // DEBUG
+                            console.error(err);
                             done(err);
                         });
                 });
@@ -95,6 +98,9 @@ module.exports = class Auth extends Module {
                     Application.modules[this.config.webserverModuleName].addMiddleware((req, res, next) => {
                         let token = req.headers["neat-auth"] || null;
                         let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
+
+                        // DEBUG
+                        console.log(`token middleware: ${token}`);
 
                         if (!token) {
                             return next();
@@ -126,6 +132,7 @@ module.exports = class Auth extends Module {
                                     return next();
                                 });
                             }, (err) => {
+                                console.error(err);
                                 return next();
                             })
                     })
@@ -166,6 +173,9 @@ module.exports = class Auth extends Module {
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/login", (req, res) => {
 
+                    // DEBUG
+                    console.log(`do login`);
+
                     passport.authenticate("local", (err, user, info) => {
                         if (!user) {
                             res.status(400);
@@ -175,6 +185,9 @@ module.exports = class Auth extends Module {
                             });
                         }
 
+                        // DEBUG
+                        console.log(`auth res error: ${err}`);
+
                         let userPopulateProm = Promise.resolve();
                         if (this.config.populateUser && this.config.populateUser.length) {
                             userPopulateProm = user.populate(this.config.populateUser).execPopulate();
@@ -182,6 +195,9 @@ module.exports = class Auth extends Module {
 
                         userPopulateProm.then(() => {
                             let acceptProm = Promise.resolve();
+
+                            // DEBUG
+                            console.log(`populated user`);
 
                             if (req.body.termsAndConditionsAccepted && this.config.enabled.terms) {
                                 user.acceptTermsAndConditions();
@@ -221,6 +237,9 @@ module.exports = class Auth extends Module {
                                     return res.err(err);
                                 }
 
+                                // DEBUG
+                                console.log(`user logged in ${user.email}`);
+
                                 Application.emit("user.login", {
                                     user: user,
                                     data: req.body
@@ -228,7 +247,8 @@ module.exports = class Auth extends Module {
 
                                 res.json(user);
                             });
-                        }, () => {
+                        }, (err) => {
+                            console.error(err);
                             res.status(400);
                             return res.json({
                                 code: "terms_outdated",
@@ -252,6 +272,9 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/current", (req, res) => {
+
+                    // DEBUG
+                    console.log(`check auth current ${JSON.stringify(req.user, null, 4)}`);
 
                     if (!req.user || (!this.config.allowLoginWithoutActivation && (!req.user.activation || !req.user.activation.active))) {
                         res.status(400);
