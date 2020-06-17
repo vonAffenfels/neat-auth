@@ -81,6 +81,8 @@ module.exports = class Auth extends Module {
                                     lastActivity: new Date()
                                 }
                             }).then(() => {
+                                // DEBUG
+                                console.log(`user update complete, returning user`);
                                 done(null, user);
                             }, (err) => {
                                 console.error("user update error", err);
@@ -183,7 +185,10 @@ module.exports = class Auth extends Module {
                     // DEBUG
                     console.log(`do login`);
 
-                    passport.authenticate("local", (err, user, info) => {
+                    passport.authenticate("local", {failureFlash: true}, (err, user, info) => {
+                        // DEBUG
+                        console.log(`auth res error: ${err} | useR: ${JSON.stringify(user, null, 4)} |info:${info}`);
+
                         if (!user) {
                             res.status(400);
                             return res.json({
@@ -192,8 +197,6 @@ module.exports = class Auth extends Module {
                             });
                         }
 
-                        // DEBUG
-                        console.log(`auth res error: ${err}`);
 
                         let userPopulateProm = Promise.resolve();
                         if (this.config.populateUser && this.config.populateUser.length) {
