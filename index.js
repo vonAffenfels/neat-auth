@@ -57,12 +57,19 @@ module.exports = class Auth extends Module {
                  */
                 passport.deserializeUser((id, done) => {
                     var userModel = Application.modules[this.config.dbModuleName].getModel("user");
+
+                    // DEBUG
+                    console.log(`deserialize user: ${id}`);
+
                     userModel
                         .findOne({
                             _id: id
                         })
                         .populate(this.config.populateUser)
                         .then((user) => {
+                            // DEBUG
+                            console.log(`user found: ${user.email}`);
+
                             if (!user) {
                                 return done(null, false);
                             }
