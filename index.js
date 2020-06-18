@@ -58,17 +58,12 @@ module.exports = class Auth extends Module {
                 passport.deserializeUser((id, done) => {
                     var userModel = Application.modules[this.config.dbModuleName].getModel("user");
 
-                    // DEBUG
-                    console.log(`deserialize user: ${id}`);
-
                     userModel
                         .findOne({
                             _id: id
                         })
                         .populate(this.config.populateUser)
                         .then((user) => {
-                            // DEBUG
-                            console.log(`user found: ${user.email}`);
 
                             if (!user) {
                                 return done(null, false);
@@ -81,8 +76,6 @@ module.exports = class Auth extends Module {
                                     lastActivity: new Date()
                                 }
                             }).then(() => {
-                                // DEBUG
-                                console.log(`user update complete, returning user`);
                                 done(null, user);
                             }, (err) => {
                                 console.error("user update error", err);
@@ -90,7 +83,6 @@ module.exports = class Auth extends Module {
                             });
 
                         }, (err) => {
-                            // DEBUG
                             console.error("deserialize error", err);
                             done(err);
                         });
@@ -107,9 +99,6 @@ module.exports = class Auth extends Module {
                     Application.modules[this.config.webserverModuleName].addMiddleware((req, res, next) => {
                         let token = req.headers["neat-auth"] || null;
                         let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
-
-                        // DEBUG
-                        console.log(`token middleware: ${token}`);
 
                         if (!token) {
                             return next();
@@ -182,13 +171,7 @@ module.exports = class Auth extends Module {
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/login", (req, res) => {
 
-                    // DEBUG
-                    console.log(`do login`);
-
                     passport.authenticate("local", {failureFlash: true}, (err, user, info) => {
-                        // DEBUG
-                        console.log(`auth res error: ${err} | useR: ${JSON.stringify(user, null, 4)} |info:${info}`);
-
                         if (!user) {
                             res.status(400);
                             return res.json({
@@ -205,9 +188,6 @@ module.exports = class Auth extends Module {
 
                         userPopulateProm.then(() => {
                             let acceptProm = Promise.resolve();
-
-                            // DEBUG
-                            console.log(`populated user`);
 
                             if (req.body.termsAndConditionsAccepted && this.config.enabled.terms) {
                                 user.acceptTermsAndConditions();
@@ -247,9 +227,6 @@ module.exports = class Auth extends Module {
                                     return res.err(err);
                                 }
 
-                                // DEBUG
-                                console.log(`user logged in ${user.email}`);
-
                                 Application.emit("user.login", {
                                     user: user,
                                     data: req.body
@@ -282,9 +259,6 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/current", (req, res) => {
-
-                    // DEBUG
-                    console.log(`check auth current ${JSON.stringify(req.user, null, 4)}`);
 
                     if (!req.user || (!this.config.allowLoginWithoutActivation && (!req.user.activation || !req.user.activation.active))) {
                         res.status(400);

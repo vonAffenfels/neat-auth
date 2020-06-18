@@ -202,8 +202,7 @@ module.exports = function (passport, config, webserver) {
                             done("invalid_credentials");
                         }
                     }, (err) => {
-                        // DEBUG
-                        console.log(`strategy error: ${JSON.stringify(err, null, 4)}`);
+                        console.error(`strategy error: ${JSON.stringify(err, null, 4)}`);
                         done(err);
                     });
             });
