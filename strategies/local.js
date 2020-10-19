@@ -33,7 +33,7 @@ module.exports = function (passport, config, webserver) {
             let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
             userModel.findOne({
-                "oauth.password": dpvUser.id
+                "oauth.password": dpvUser.id,
             }, function (err, connectedUser) {
                 if (connectedUser) {
                     if (dpvUser.nickname) {
@@ -52,7 +52,7 @@ module.exports = function (passport, config, webserver) {
                 }
 
                 userModel.findOne({
-                    "email": dpvUser.email
+                    "email": dpvUser.email,
                 }, function (err, unconnectedUser) {
                     if (err) {
                         return cb(err);
@@ -63,7 +63,7 @@ module.exports = function (passport, config, webserver) {
                         unconnectedUser = new userModel({
                             username: dpvUser.nickname || hashedUsername.substr(0, 12),
                             password: hashedUsername,
-                            email: dpvUser.email
+                            email: dpvUser.email,
                         });
                     }
 
@@ -98,7 +98,7 @@ module.exports = function (passport, config, webserver) {
                     let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
                     return userModel.findOne({
-                        username: username
+                        username: username,
                     }).select({email: 1}).then((user) => {
                         if (!user) {
                             return resolve(username);
@@ -119,8 +119,8 @@ module.exports = function (passport, config, webserver) {
                         username: username,
                         password: password,
                         client_id: config.password_grant.clientID,
-                        client_secret: config.password_grant.clientSecret
-                    }
+                        client_secret: config.password_grant.clientSecret,
+                    },
                 }, function (err, res, body) {
                     if (err) {
                         return done("invalid_credentials");
@@ -137,9 +137,18 @@ module.exports = function (passport, config, webserver) {
                     }
 
                     oauthresponseHandler(body.access_token, body.refresh_token, null, function (err, user) {
-
                         if (err) {
                             return done(err);
+                        }
+
+                        // credentials valid
+                        if (config.password_grant.savePasswordLocally) {
+                            user.set("password", password);
+                            user.save().then(() => {
+                                return;
+                            }, (err) => {
+                                console.error(err);
+                            });
                         }
 
                         done(null, user, {});
@@ -183,12 +192,12 @@ module.exports = function (passport, config, webserver) {
                     .findOne({
                         $or: [
                             {
-                                username: new RegExp("^" + Tools.escapeForRegexp(username) + "$", "i")
+                                username: new RegExp("^" + Tools.escapeForRegexp(username) + "$", "i"),
                             },
                             {
-                                email: new RegExp("^" + Tools.escapeForRegexp(username) + "$", "i")
-                            }
-                        ]
+                                email: new RegExp("^" + Tools.escapeForRegexp(username) + "$", "i"),
+                            },
+                        ],
                     })
                     .exec()
                     .then((user) => {
@@ -208,4 +217,4 @@ module.exports = function (passport, config, webserver) {
             });
         }));
     }
-}
+};
