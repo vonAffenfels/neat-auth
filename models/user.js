@@ -23,7 +23,8 @@ let schema = new mongoose.Schema({
         steam: String,
         facebook: String,
         google: String,
-        password: String
+        password: String,
+        rkm: String
     },
 
     admin: {

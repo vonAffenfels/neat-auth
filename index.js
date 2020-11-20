@@ -19,12 +19,12 @@ module.exports = class Auth extends Module {
             dbModuleName: "database",
             enabled: {
                 activation: false,
-                terms: false
+                terms: false,
             },
             strategies: {
-                local: true
-            }
-        }
+                local: true,
+            },
+        };
     }
 
     init() {
@@ -42,7 +42,7 @@ module.exports = class Auth extends Module {
                  */
                 Application.modules[this.config.webserverModuleName].addMiddleware(null, passport.initialize(), 0);
                 Application.modules[this.config.webserverModuleName].addMiddleware(null, passport.session({
-                    pauseStream: true
+                    pauseStream: true,
                 }), 1);
 
                 /*
@@ -60,7 +60,7 @@ module.exports = class Auth extends Module {
 
                     userModel
                         .findOne({
-                            _id: id
+                            _id: id,
                         })
                         .populate(this.config.populateUser)
                         .then((user) => {
@@ -70,11 +70,11 @@ module.exports = class Auth extends Module {
                             }
 
                             userModel.update({
-                                _id: id
+                                _id: id,
                             }, {
                                 $set: {
-                                    lastActivity: new Date()
-                                }
+                                    lastActivity: new Date(),
+                                },
                             }).then(() => {
                                 done(null, user);
                             }, (err) => {
@@ -90,6 +90,8 @@ module.exports = class Auth extends Module {
 
                 if (this.config.strategies.local) {
                     require("./strategies/local.js")(passport, this.config.strategies.local, Application.modules[this.config.webserverModuleName]);
+                } else if (this.config.strategies.rkm) {
+                    require("./strategies/rkm.js")(passport, this.config.strategies.rkm, Application.modules[this.config.webserverModuleName]);
                 }
                 if (this.config.strategies.facebook) {
                     require("./strategies/facebook.js")(passport, this.config.strategies.facebook, Application.modules[this.config.webserverModuleName]);
@@ -106,7 +108,7 @@ module.exports = class Auth extends Module {
 
                         userModel
                             .findOne({
-                                _authtoken: token
+                                _authtoken: token,
                             })
                             .populate(this.config.populateUser)
                             .exec()
@@ -119,26 +121,26 @@ module.exports = class Auth extends Module {
                                     res.status(400);
                                     return res.json({
                                         code: "banned",
-                                        message: "Your account has been banned. If you believe this to be a mistake, please contact us."
+                                        message: "Your account has been banned. If you believe this to be a mistake, please contact us.",
                                     });
                                 }
 
                                 req.logIn(doc, function (err) {
                                     Application.emit("user.tokenlogin", {
-                                        user: doc
+                                        user: doc,
                                     });
                                     return next();
                                 });
                             }, (err) => {
                                 console.error("user model populate", err);
                                 return next();
-                            })
-                    })
+                            });
+                    });
                 }
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/register", (req, res) => {
 
-                    if(this.config.registrationDisabled) {
+                    if (this.config.registrationDisabled) {
                         res.status(400);
                         return res.err("registration disabled");
                     }
@@ -176,7 +178,7 @@ module.exports = class Auth extends Module {
                             res.status(400);
                             return res.json({
                                 code: "invalid_credentials",
-                                message: "Invalid credentials"
+                                message: "Invalid credentials",
                             });
                         }
 
@@ -203,7 +205,7 @@ module.exports = class Auth extends Module {
                                 res.status(400);
                                 return res.json({
                                     code: "not_activated",
-                                    message: "Please activate your account"
+                                    message: "Please activate your account",
                                 });
                             }
 
@@ -211,7 +213,7 @@ module.exports = class Auth extends Module {
                                 res.status(400);
                                 return res.json({
                                     code: "banned",
-                                    message: "Your account has been banned. If you believe this to be a mistake, please contact us."
+                                    message: "Your account has been banned. If you believe this to be a mistake, please contact us.",
                                 });
                             }
 
@@ -229,7 +231,7 @@ module.exports = class Auth extends Module {
 
                                 Application.emit("user.login", {
                                     user: user,
-                                    data: req.body
+                                    data: req.body,
                                 });
 
                                 return res.json(user);
@@ -239,22 +241,22 @@ module.exports = class Auth extends Module {
                             res.status(400);
                             return res.json({
                                 code: "terms_outdated",
-                                message: "You have to accept the current terms and conditions."
+                                message: "You have to accept the current terms and conditions.",
                             });
-                        })
-                    })(req, res)
+                        });
+                    })(req, res);
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/logout", (req, res) => {
                     if (!req.user) {
                         return res.json({
-                            success: true
+                            success: true,
                         });
                     }
 
                     req.logout();
                     return res.json({
-                        success: true
+                        success: true,
                     });
                 });
 
@@ -264,7 +266,7 @@ module.exports = class Auth extends Module {
                         res.status(400);
                         return res.json({
                             code: "not_loggedin",
-                            message: "Not Logged in"
+                            message: "Not Logged in",
                         });
                     }
 
@@ -275,9 +277,9 @@ module.exports = class Auth extends Module {
                             req.logout();
                             return res.json({
                                 code: "terms_outdated",
-                                message: "You have to accept the current terms and conditions."
+                                message: "You have to accept the current terms and conditions.",
                             });
-                        })
+                        });
                     } else {
                         res.json(req.user.toObject({virtuals: true, getters: true}));
                     }
@@ -286,46 +288,69 @@ module.exports = class Auth extends Module {
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/getCurrentTermsAndConditions", (req, res) => {
                     let termsModel = Application.modules[this.config.dbModuleName].getModel("termversion");
                     return termsModel.findOne().sort({
-                        _createdAt: -1
+                        _createdAt: -1,
                     }).select({content: req.body.content || false, versions: false}).then((currentTermsVersion) => {
                         res.json(currentTermsVersion);
                     });
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/reset-password", (req, res) => {
-                    var user = Application.modules[this.config.dbModuleName].getModel("user");
+                    if (this.config.strategies.rkm) {
+                        const strategy = require("./strategies/rkm.js");
 
-                    if (!req.body.email) {
-                        return res.status(400).json({
-                            code: "email_missing",
-                            message: "Email missing"
-                        })
-                    }
-
-                    user.findOne({
-                        "email": req.body.email.toLowerCase().trim()
-                    }).then((doc) => {
-                        if (doc) {
-                            doc.resetPassword();
-                            Application.emit("user.reset", {
-                                user: doc,
-                                data: req.body
-                            });
-                            res.json({
-                                success: true
-                            });
-                        } else {
-                            res.status(400);
-                            return res.json({
-                                code: "email_not_found",
-                                message: "User not found"
+                        if (!req.body.email) {
+                            return res.status(400).json({
+                                code: "email_missing",
+                                message: "Email missing",
                             });
                         }
 
-                    }, (err) => {
-                        res.status(400);
-                        res.err(err);
-                    });
+                        strategy.resetPassword(req.body.email, this.config.strategies.rkm).then(() => {
+                            res.json({
+                                success: true,
+                            });
+                        }, (err) => {
+                            res.status(400);
+                            return res.json({
+                                code: "email_not_found",
+                                message: "User not found",
+                            });
+                        });
+                    } else {
+                        var user = Application.modules[this.config.dbModuleName].getModel("user");
+
+                        if (!req.body.email) {
+                            return res.status(400).json({
+                                code: "email_missing",
+                                message: "Email missing",
+                            });
+                        }
+
+                        user.findOne({
+                            "email": req.body.email.toLowerCase().trim(),
+                        }).then((doc) => {
+                            if (doc) {
+                                doc.resetPassword();
+                                Application.emit("user.reset", {
+                                    user: doc,
+                                    data: req.body,
+                                });
+                                res.json({
+                                    success: true,
+                                });
+                            } else {
+                                res.status(400);
+                                return res.json({
+                                    code: "email_not_found",
+                                    message: "User not found",
+                                });
+                            }
+
+                        }, (err) => {
+                            res.status(400);
+                            res.err(err);
+                        });
+                    }
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/do-reset-password", (req, res) => {
@@ -333,7 +358,7 @@ module.exports = class Auth extends Module {
                         res.status(400);
                         return res.json({
                             code: "token_invalid",
-                            message: "Password reset token invalid"
+                            message: "Password reset token invalid",
                         });
                     }
 
@@ -341,20 +366,20 @@ module.exports = class Auth extends Module {
                         res.status(400);
                         return res.json({
                             code: "password_mismatch",
-                            message: "Passwords do not match"
+                            message: "Passwords do not match",
                         });
                     }
 
                     var model = Application.modules[this.config.dbModuleName].getModel("user");
                     model.findOne({
-                        "reset.token": req.body.token
+                        "reset.token": req.body.token,
                     }).then((doc) => {
 
                         if (!doc) {
                             res.status(400);
                             return res.json({
                                 code: "token_invalid",
-                                message: "Password reset token invalid"
+                                message: "Password reset token invalid",
                             });
                         }
 
@@ -373,7 +398,7 @@ module.exports = class Auth extends Module {
 
                                 Application.emit("user.login", {
                                     user: doc,
-                                    data: req.body
+                                    data: req.body,
                                 });
 
                                 res.json(doc);
@@ -382,7 +407,7 @@ module.exports = class Auth extends Module {
                             res.status(400);
                             res.err(err);
                         });
-                    })
+                    });
                 });
             }
 
@@ -439,13 +464,13 @@ module.exports = class Auth extends Module {
 
             if (data.password !== data.password2) {
                 return reject({
-                    password: "The passwords do not match"
+                    password: "The passwords do not match",
                 });
             }
 
             if (!data.termsAndConditionsAccepted && this.config.enabled.terms) {
                 return reject({
-                    termsAndConditionsAccepted: "Please accept our terms and conditions"
+                    termsAndConditionsAccepted: "Please accept our terms and conditions",
                 });
             }
 
@@ -466,13 +491,13 @@ module.exports = class Auth extends Module {
                 return user.acceptTermsAndConditions().save().then(() => {
                     Application.emit("user.register", {
                         user: user,
-                        data: data
+                        data: data,
                     });
 
                     resolve(user);
                 }, reject);
             });
-        })
+        });
     }
 
     activate(token) {
@@ -482,34 +507,34 @@ module.exports = class Auth extends Module {
             if (!token) {
                 return reject({
                     code: "token_missing",
-                    message: "Please supply an activation token"
+                    message: "Please supply an activation token",
                 });
             }
 
             userModel.findOne({
-                "activation.token": token
+                "activation.token": token,
             }).then((doc) => {
                 if (!doc) {
                     return reject({
                         code: "invalid_token",
-                        message: "The supplied token is invalid"
+                        message: "The supplied token is invalid",
                     });
                 }
 
                 if (doc.activation.active) {
                     return reject({
                         code: "already_used",
-                        message: "The supplied token has already been used"
+                        message: "The supplied token has already been used",
                     });
                 }
 
                 doc.set("activation.active", true);
 
                 doc.save({
-                    validateBeforeSave: false
+                    validateBeforeSave: false,
                 }).then(() => {
                     Application.emit("user.activated", {
-                        user: doc
+                        user: doc,
                     });
 
                     resolve(doc);
@@ -517,7 +542,7 @@ module.exports = class Auth extends Module {
                     return reject(err);
                 });
             });
-        })
+        });
     }
 
     resendActivationMail(data) {
@@ -528,25 +553,25 @@ module.exports = class Auth extends Module {
                 .findOne({
                     $or: [
                         {
-                            username: new RegExp("^" + Tools.escapeForRegexp(usernameOrEmail) + "$", "i")
+                            username: new RegExp("^" + Tools.escapeForRegexp(usernameOrEmail) + "$", "i"),
                         },
                         {
-                            email: new RegExp("^" + Tools.escapeForRegexp(usernameOrEmail) + "$", "i")
-                        }
-                    ]
+                            email: new RegExp("^" + Tools.escapeForRegexp(usernameOrEmail) + "$", "i"),
+                        },
+                    ],
                 })
                 .exec()
                 .then((user) => {
                     if (!user) {
                         return reject({
                             code: "user_not_found",
-                            message: "User not found"
+                            message: "User not found",
                         });
                     }
 
                     Application.emit("user.register", {
                         user: user,
-                        data: data
+                        data: data,
                     });
 
                     resolve();
@@ -571,7 +596,7 @@ module.exports = class Auth extends Module {
                     }
 
                     Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
-                        username: regexp
+                        username: regexp,
                     }).read("primary").then((user) => {
 
                         if ((user && user.id !== self.id)) {
@@ -623,7 +648,7 @@ module.exports = class Auth extends Module {
                         cb(false);
                     }
                     Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
-                        email: regexp
+                        email: regexp,
                     }).read("primary").then((user) => {
                         if ((user && user.id !== self.id)) {
                             return cb(false);
@@ -656,13 +681,18 @@ module.exports = class Auth extends Module {
                     return cb(true);
                 }
 
+                // is a connected user, we can only check this on login in this case
+                if (this.oauth && this.oauth.rkm) {
+                    return cb(true);
+                }
+
                 if (!value || !value.length) {
                     return cb(false);
                 }
 
                 let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
                 return termsModel.findOne().sort({
-                    _createdAt: -1
+                    _createdAt: -1,
                 }).then((currentTermsVersion) => {
 
                     for (let i = 0; i < value.length; i++) {
@@ -679,7 +709,7 @@ module.exports = class Auth extends Module {
 
             schema.methods.checkPassword = function (val) {
                 return passwordHash.verify(val, this.password);
-            }
+            };
 
             schema.methods.resetPassword = function () {
                 const userModel = Application.modules[selfModule.config.dbModuleName].getModel("user");
@@ -687,19 +717,19 @@ module.exports = class Auth extends Module {
                 this.set("reset.token", token);
                 this.set("reset.active", true);
                 return userModel.update({
-                    _id: this.get("_id")
+                    _id: this.get("_id"),
                 }, {
                     $set: {
                         "reset.token": token,
-                        "reset.active": true
-                    }
-                }).exec()
-            }
+                        "reset.active": true,
+                    },
+                }).exec();
+            };
 
             schema.methods.acceptTermsAndConditions = function () {
                 this._acceptTermsAndConditions = true;
                 return this;
-            }
+            };
 
             schema.methods.isOwnerOfDoc = function (doc) {
                 if (!doc) {
@@ -717,7 +747,7 @@ module.exports = class Auth extends Module {
                 }
 
                 return false;
-            }
+            };
 
             schema.methods.hasPermission = function (val) {
                 // admin, access to everything
@@ -749,7 +779,7 @@ module.exports = class Auth extends Module {
                 }
 
                 return false;
-            }
+            };
 
             schema.methods.checkTermsAndConditions = function () {
                 return new Promise((resolve, reject) => {
@@ -760,7 +790,7 @@ module.exports = class Auth extends Module {
 
                     let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
                     return termsModel.findOne().sort({
-                        _createdAt: -1
+                        _createdAt: -1,
                     }).then((currentTermsVersion) => {
 
                         if (!currentTermsVersion) {
@@ -778,14 +808,14 @@ module.exports = class Auth extends Module {
                         return reject(new Error("invalid version"));
                     });
                 });
-            }
+            };
 
             schema.pre("validate", function (next) {
                 if (this._acceptTermsAndConditions && selfModule.config.enabled.terms) {
 
                     let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
                     return termsModel.findOne().sort({
-                        _createdAt: -1
+                        _createdAt: -1,
                     }).then((currentTermsVersion) => {
 
                         if (!currentTermsVersion) {
@@ -797,7 +827,7 @@ module.exports = class Auth extends Module {
                         }
 
                         this.termsAndConditions.push({
-                            version: currentTermsVersion._id
+                            version: currentTermsVersion._id,
                         });
 
                         next();
@@ -811,4 +841,4 @@ module.exports = class Auth extends Module {
         }
 
     }
-}
+};
