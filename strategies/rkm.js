@@ -18,19 +18,19 @@ module.exports = function (passport, config, webserver) {
                 username: username,
                 password: password,
             },
+            json: true,
         }, function (err, res, body) {
+
             if (err) {
                 return done("invalid_credentials");
             }
 
             if (res.statusCode !== 200) {
-                return done("invalid_credentials");
-            }
+                if (body.activation) {
+                    return done("not_activated");
+                }
 
-            try {
-                body = JSON.parse(body);
-            } catch (e) {
-                return done("internal_error");
+                return done("invalid_credentials");
             }
 
             const rkmUser = body.user;
@@ -41,8 +41,8 @@ module.exports = function (passport, config, webserver) {
             }, function (err, connectedUser) {
 
                 if (connectedUser) {
-                    if (rkmUser.username) {
-                        connectedUser.set("username", rkmUser.username);
+                    if (rkmUser.display) {
+                        connectedUser.set("display", rkmUser.display);
                     }
 
                     if (rkmUser.email) {
@@ -67,15 +67,15 @@ module.exports = function (passport, config, webserver) {
 
                     if (!unconnectedUser) {
                         unconnectedUser = new userModel({
-                            username: rkmUser.username,
+                            username: rkmUser.display,
                             email: rkmUser.email,
                         });
                     }
 
                     unconnectedUser.set("oauth.rkm", rkmUser._id);
 
-                    if (rkmUser.username) {
-                        unconnectedUser.set("username", rkmUser.username);
+                    if (rkmUser.display) {
+                        unconnectedUser.set("username", rkmUser.display);
                     }
 
                     if (rkmUser.email) {
@@ -107,10 +107,42 @@ module.exports.resetPassword = async function (email, config) {
             },
         }, function (err, res, body) {
             if (err || res.statusCode !== 200) {
-                return reject(new Error(err.message || body));
+                return reject(new Error(err ? err.message : body));
             }
 
             return resolve();
+        });
+    });
+};
+
+module.exports.register = async function (email, username, password, config) {
+    return new Promise((resolve, reject) => {
+        return request({
+            url: config.host + "/api/auth-local/register",
+            method: "post",
+            body: {
+                client: config.client,
+                "display": username,
+                "email": email,
+                "username": username,
+                "password": password,
+            },
+            json: true,
+        }, function (err, res, body) {
+
+            if (err || res.statusCode !== 200) {
+                const error = new Error(err ? err.message : body);
+
+                if (body) {
+                    error.errors = body;
+                } else {
+                    error.errors = {username: err.message};
+                }
+
+                return reject(error);
+            }
+
+            return resolve(body);
         });
     });
 };

@@ -177,7 +177,7 @@ module.exports = class Auth extends Module {
                         if (!user) {
                             res.status(400);
                             return res.json({
-                                code: "invalid_credentials",
+                                code: err,
                                 message: "Invalid credentials",
                             });
                         }
@@ -310,11 +310,19 @@ module.exports = class Auth extends Module {
                                 success: true,
                             });
                         }, (err) => {
+
                             res.status(400);
-                            return res.json({
-                                code: "email_not_found",
-                                message: "User not found",
-                            });
+                            if (err.code) {
+                                return res.json({
+                                    code: err.code,
+                                    message: err.message,
+                                });
+                            } else {
+                                return res.json({
+                                    code: "email_not_found",
+                                    message: "User not found",
+                                });
+                            }
                         });
                     } else {
                         var user = Application.modules[this.config.dbModuleName].getModel("user");
@@ -459,44 +467,65 @@ module.exports = class Auth extends Module {
 
     register(data) {
         return new Promise((resolve, reject) => {
-            let userModel = Application.modules[this.config.dbModuleName].getModel("user");
-            let user = new userModel(data);
-
             if (data.password !== data.password2) {
                 return reject({
                     password: "The passwords do not match",
                 });
             }
 
-            if (!data.termsAndConditionsAccepted && this.config.enabled.terms) {
-                return reject({
-                    termsAndConditionsAccepted: "Please accept our terms and conditions",
-                });
-            }
+            if (this.config.strategies.rkm) {
+                const strategy = require("./strategies/rkm.js");
 
-            let ssoSync = Promise.resolve(true);
-            if (this.sso) {
-                ssoSync = this.sso.syncUserByEmail(data.email, data.password);
-            }
-
-            ssoSync.then(() => {
-                let ssoSyncUsername = Promise.resolve();
-
-                if (this.sso) {
-                    ssoSyncUsername = this.sso.syncUserByUsername(data.username, data.password);
-                }
-
-                return ssoSyncUsername;
-            }).then(() => {
-                return user.acceptTermsAndConditions().save().then(() => {
-                    Application.emit("user.register", {
-                        user: user,
-                        data: data,
+                strategy.register(data.email, data.username, data.password, this.config.strategies.rkm).then((userData) => {
+                    let userModel = Application.modules[this.config.dbModuleName].getModel("user");
+                    let user = new userModel({
+                        "username": data.username,
+                        "email": data.email,
+                        "termsAndConditionsAccepted": true,
                     });
 
-                    resolve(user);
-                }, reject);
-            });
+                    return user.acceptTermsAndConditions().save().then(() => {
+                        return resolve(user);
+                    }, reject);
+
+                }, (err) => {
+                    return reject(err.errors);
+                });
+            } else {
+
+                if (!data.termsAndConditionsAccepted && this.config.enabled.terms) {
+                    return reject({
+                        termsAndConditionsAccepted: "Please accept our terms and conditions",
+                    });
+                }
+
+                let userModel = Application.modules[this.config.dbModuleName].getModel("user");
+                let user = new userModel(data);
+
+                let ssoSync = Promise.resolve(true);
+                if (this.sso) {
+                    ssoSync = this.sso.syncUserByEmail(data.email, data.password);
+                }
+
+                ssoSync.then(() => {
+                    let ssoSyncUsername = Promise.resolve();
+
+                    if (this.sso) {
+                        ssoSyncUsername = this.sso.syncUserByUsername(data.username, data.password);
+                    }
+
+                    return ssoSyncUsername;
+                }).then(() => {
+                    return user.acceptTermsAndConditions().save().then(() => {
+                        Application.emit("user.register", {
+                            user: user,
+                            data: data,
+                        });
+
+                        resolve(user);
+                    }, reject);
+                });
+            }
         });
     }
 
