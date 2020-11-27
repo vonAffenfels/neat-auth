@@ -51,6 +51,7 @@ module.exports = function (passport, config, webserver) {
                 });
             }
 
+            const rkmUser = body.user;
             const userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
             return userModel.findOne({
