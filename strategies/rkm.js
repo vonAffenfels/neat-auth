@@ -21,25 +21,41 @@ module.exports = function (passport, config, webserver) {
             json: true,
         }, function (err, res, body) {
 
-            if (err) {
-                return done("invalid_credentials");
-            }
+            let invalidCredentials = false;
 
-            if (res.statusCode !== 200) {
+            if (err) {
+                invalidCredentials = true;
+                return done("invalid_credentials");
+            } else if (res.statusCode !== 200) {
                 if (body.activation) {
                     return done("not_activated");
                 }
 
-                return done("invalid_credentials");
+                invalidCredentials = true;
             }
 
-            const rkmUser = body.user;
+            if (invalidCredentials) {
+                return request({
+                    url: config.host + "/api/auth-local/hasCredentials",
+                    method: "post",
+                    form: {
+                        username: username,
+                    },
+                    json: true,
+                }, function (err, res, body) {
+                    if (body && body.exists && !body.hasCredentials) {
+                        return done("new_password");
+                    }
+
+                    return done("invalid_credentials");
+                });
+            }
+
             const userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
             return userModel.findOne({
                 "oauth.rkm": rkmUser._id,
             }, function (err, connectedUser) {
-
                 if (connectedUser) {
                     if (rkmUser.display) {
                         connectedUser.set("display", rkmUser.display);
