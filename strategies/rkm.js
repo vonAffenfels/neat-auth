@@ -59,7 +59,7 @@ module.exports = function (passport, config, webserver) {
             }, function (err, connectedUser) {
                 if (connectedUser) {
                     if (rkmUser.display) {
-                        connectedUser.set("display", rkmUser.display);
+                        connectedUser.set("username", rkmUser.display);
                     }
 
                     if (rkmUser.email) {
