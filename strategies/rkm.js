@@ -163,3 +163,127 @@ module.exports.register = async function (email, username, password, config) {
         });
     });
 };
+
+
+module.exports.saveUser = async function (_id, data, config) {
+    const {email, username, password} = data;
+    let errors = null;
+
+    if (password) {
+        try {
+            await changePassword(_id, password, config);
+        } catch (e) {
+            if (!errors) {
+                errors = {};
+            }
+            errors.password = "password error";
+        }
+    }
+    if (username) {
+        try {
+            await changeUsername(_id, username, config);
+        } catch (e) {
+            if (!errors) {
+                errors = {};
+            }
+            errors.username = "username error";
+        }
+    }
+    if (email) {
+        try {
+            await changeEmail(_id, email, config);
+        } catch (e) {
+            if (!errors) {
+                errors = {};
+            }
+            errors.email = "email error";
+        }
+    }
+
+    if (errors) {
+        let error = new Error();
+        error.errors = errors;
+        throw error;
+    }
+
+    return;
+};
+
+async function changePassword(_id, password, config) {
+    return new Promise((resolve, reject) => {
+        return request({
+            url: config.host + "/api/auth-local/changePassword",
+            method: "post",
+            body: {
+                userId: _id,
+                password: password,
+
+            },
+            headers: {
+                "rkm-authorization": config.apiKey,
+            },
+            json: true,
+        }, function (err, res, body) {
+
+            if (err || res.statusCode !== 200) {
+                return reject(new Error("password.invalid"));
+            }
+
+            return resolve(body);
+        });
+    });
+}
+
+async function changeUsername(_id, username, config) {
+    return new Promise((resolve, reject) => {
+        return request({
+            url: config.host + "/api/auth-local/changeUsername",
+            method: "post",
+            body: {
+                userId: _id,
+                username: username,
+
+            },
+            headers: {
+                "rkm-authorization": config.apiKey,
+            },
+            json: true,
+        }, function (err, res, body) {
+
+            if (err || res.statusCode !== 200) {
+                return reject(new Error("username.invalid"));
+            }
+
+            return resolve(body);
+        });
+    });
+}
+
+async function changeEmail(_id, email, config) {
+    return new Promise((resolve, reject) => {
+        return request({
+            url: config.host + "/api/auth-local/changeEmail",
+            method: "post",
+            body: {
+                userId: _id,
+                email: email,
+
+            },
+            headers: {
+                "rkm-authorization": config.apiKey,
+            },
+            json: true,
+        }, function (err, res, body) {
+
+            if (err || res.statusCode !== 200) {
+                return reject(new Error("email.invalid"));
+            }
+
+            return resolve(body);
+        });
+    });
+}
+
+module.exports.changePassword = changePassword;
+module.exports.changeUsername = changeUsername;
+module.exports.changeEmail = changeEmail;

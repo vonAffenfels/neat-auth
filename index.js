@@ -138,6 +138,41 @@ module.exports = class Auth extends Module {
                     });
                 }
 
+
+                Application.modules[this.config.webserverModuleName].addMiddleware("/api/user/save", async (req, res, next) => {
+
+                    if (req.body && req.body.data) {
+                        const password = req.body.data.password;
+                        const email = req.body.data.email;
+                        const username = req.body.data.username;
+                        const userId = req.body.data._id;
+
+                        if (userId && (password || email || username)) {
+                            if (this.config.strategies.rkm) {
+                                const strategy = require("./strategies/rkm.js");
+                                let userModel = Application.modules[this.config.dbModuleName].getModel("user");
+                                let user = await userModel.findOne({_id: userId});
+
+                                if (String(userId) !== String(req.user._id)) {
+                                    if (!req.user.admin) {
+                                        res.status(400);
+                                        return res.err("not admin");
+                                    }
+                                }
+
+                                return strategy.saveUser(user.get("oauth.rkm"), {email, username, password}, this.config.strategies.rkm).then((userData) => {
+                                    next();
+                                }, (err) => {
+                                    res.status(400);
+                                    return res.json(err.errors);
+                                });
+                            }
+                        }
+                    }
+
+                    next();
+                });
+
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/register", (req, res) => {
 
                     if (this.config.registrationDisabled) {
