@@ -189,7 +189,7 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/activate-account", (req, res) => {
-                    this.activate(req.body.token).then((user) => {
+                    this.activate(req.body.token, req.body.language || "en").then((user) => {
                         res.json(user);
                     }, (err) => {
                         res.status(400);
@@ -198,7 +198,7 @@ module.exports = class Auth extends Module {
                 });
 
                 Application.modules[this.config.webserverModuleName].addRoute("post", "/auth/resend-activation", (req, res) => {
-                    this.resendActivationMail(req.body).then((user) => {
+                    this.resendActivationMail(req.body, req.body.language || "en").then((user) => {
                         res.json(user);
                     }, (err) => {
                         res.status(400);
@@ -500,7 +500,7 @@ module.exports = class Auth extends Module {
         return false;
     }
 
-    register(data) {
+    register(data, config = {}) {
         return new Promise((resolve, reject) => {
             if (data.password !== data.password2) {
                 return reject({
@@ -511,7 +511,7 @@ module.exports = class Auth extends Module {
             if (this.config.strategies.rkm) {
                 const strategy = require("./strategies/rkm.js");
 
-                strategy.register(data.email, data.username, data.password, this.config.strategies.rkm).then((userData) => {
+                strategy.register(data.email, data.username, data.password, Object.assign({}, this.config.strategies.rkm, config)).then((userData) => {
                     let userModel = Application.modules[this.config.dbModuleName].getModel("user");
                     let user = new userModel({
                         "username": data.username,
@@ -564,7 +564,7 @@ module.exports = class Auth extends Module {
         });
     }
 
-    activate(token) {
+    activate(token, language) {
         return new Promise((resolve, reject) => {
             var userModel = Application.modules[this.config.dbModuleName].getModel("user");
 
@@ -599,6 +599,7 @@ module.exports = class Auth extends Module {
                 }).then(() => {
                     Application.emit("user.activated", {
                         user: doc,
+                        language: language
                     });
 
                     resolve(doc);
@@ -609,7 +610,7 @@ module.exports = class Auth extends Module {
         });
     }
 
-    resendActivationMail(data) {
+    resendActivationMail(data, language) {
         let usernameOrEmail = data.username;
         return new Promise((resolve, reject) => {
             var userModel = Application.modules[this.config.dbModuleName].getModel("user");
@@ -636,6 +637,7 @@ module.exports = class Auth extends Module {
                     Application.emit("user.register", {
                         user: user,
                         data: data,
+                        language: language
                     });
 
                     resolve();

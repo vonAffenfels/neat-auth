@@ -143,6 +143,7 @@ module.exports.register = async function (email, username, password, config) {
                 "email": email,
                 "username": username,
                 "password": password,
+                "customActivation": config.customActivation || false
             },
             json: true,
         }, function (err, res, body) {
