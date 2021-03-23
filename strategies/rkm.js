@@ -121,13 +121,14 @@ module.exports.resetPassword = async function (email, config) {
             form: {
                 client: config.client,
                 email: email,
+                noMail: config.noMail || false
             },
         }, function (err, res, body) {
             if (err || res.statusCode !== 200) {
                 return reject(new Error(err ? err.message : body));
             }
 
-            return resolve();
+            return resolve(body);
         });
     });
 };

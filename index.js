@@ -340,7 +340,13 @@ module.exports = class Auth extends Module {
                             });
                         }
 
-                        strategy.resetPassword(req.body.email, this.config.strategies.rkm).then(() => {
+                        const config = {};
+
+                        if (req.body.noMail) {
+                            config.noMail = true;
+                        }
+
+                        strategy.resetPassword(req.body.email, Object.assign({}, this.config.strategies.rkm, config)).then(() => {
                             res.json({
                                 success: true,
                             });
@@ -455,6 +461,27 @@ module.exports = class Auth extends Module {
             }
 
             resolve(this);
+        });
+    }
+
+    resetPassword(data) {
+        return new Promise((resolve, reject) => {
+            const strategy = require("./strategies/rkm.js");
+
+            if (!data.email) {
+                return reject({
+                    code: "email_missing",
+                    message: "Email missing",
+                });
+            }
+
+            const config = {};
+
+            if (data.noMail) {
+                config.noMail = true;
+            }
+
+            strategy.resetPassword(data.email, Object.assign({}, this.config.strategies.rkm, config)).then(resolve, reject);
         });
     }
 
