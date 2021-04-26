@@ -540,16 +540,30 @@ module.exports = class Auth extends Module {
 
                 strategy.register(data.email, data.username, data.password, Object.assign({}, this.config.strategies.rkm, config)).then((userData) => {
                     let userModel = Application.modules[this.config.dbModuleName].getModel("user");
-                    let user = new userModel({
-                        "username": data.username,
+
+                    return userModel.findOne({
                         "email": data.email,
-                        "termsAndConditionsAccepted": true,
+                        "oauth.rkm": null,
+                    }).then((existingUnconnectedUser) => {
+                        if (existingUnconnectedUser) {
+                            existingUnconnectedUser.set("oauth.rkm", data._id);
+                            existingUnconnectedUser.set("termsAndConditionsAccepted", true);
+
+                            return existingUnconnectedUser.acceptTermsAndConditions().save().then(() => {
+                                return resolve(existingUnconnectedUser);
+                            }, reject);
+                        } else {
+                            let user = new userModel({
+                                "username": data.username,
+                                "email": data.email,
+                                "termsAndConditionsAccepted": true,
+                            });
+
+                            return user.acceptTermsAndConditions().save().then(() => {
+                                return resolve(user);
+                            }, reject);
+                        }
                     });
-
-                    return user.acceptTermsAndConditions().save().then(() => {
-                        return resolve(user);
-                    }, reject);
-
                 }, (err) => {
                     return reject(err.errors);
                 });
@@ -626,7 +640,7 @@ module.exports = class Auth extends Module {
                 }).then(() => {
                     Application.emit("user.activated", {
                         user: doc,
-                        language: language
+                        language: language,
                     });
 
                     resolve(doc);
@@ -664,7 +678,7 @@ module.exports = class Auth extends Module {
                     Application.emit("user.register", {
                         user: user,
                         data: data,
-                        language: language
+                        language: language,
                     });
 
                     resolve();
