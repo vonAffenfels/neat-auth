@@ -543,7 +543,6 @@ module.exports = class Auth extends Module {
 
                     return userModel.findOne({
                         "email": data.email,
-                        "oauth.rkm": null,
                     }).then((existingUnconnectedUser) => {
                         if (existingUnconnectedUser) {
                             existingUnconnectedUser.set("oauth.rkm", data._id);
