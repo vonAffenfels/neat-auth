@@ -76,7 +76,7 @@ module.exports = function (passport, config, webserver) {
                 }
 
                 return userModel.findOne({
-                    "email": rkmUser.email,
+                    "email": String(rkmUser.email).toLowerCase().trim(),
                 }, function (err, unconnectedUser) {
                     if (err) {
                         return done("internal_error");
@@ -121,7 +121,7 @@ module.exports.resetPassword = async function (email, config) {
             form: {
                 client: config.client,
                 email: email,
-                noMail: config.noMail || false
+                noMail: config.noMail || false,
             },
         }, function (err, res, body) {
             if (err || res.statusCode !== 200) {
@@ -144,7 +144,7 @@ module.exports.register = async function (email, username, password, config) {
                 "email": email,
                 "username": username,
                 "password": password,
-                "customActivation": config.customActivation || false
+                "customActivation": config.customActivation || false,
             },
             json: true,
         }, function (err, res, body) {

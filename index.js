@@ -542,7 +542,7 @@ module.exports = class Auth extends Module {
                     let userModel = Application.modules[this.config.dbModuleName].getModel("user");
 
                     return userModel.findOne({
-                        "email": data.email,
+                        "email": String(data.email).toLowerCase().trim(),
                     }).then((existingUnconnectedUser) => {
                         if (existingUnconnectedUser) {
                             existingUnconnectedUser.set("oauth.rkm", data._id);
