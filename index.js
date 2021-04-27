@@ -557,6 +557,9 @@ module.exports = class Auth extends Module {
                                 "username": data.username,
                                 "email": data.email,
                                 "termsAndConditionsAccepted": true,
+                                "oauth": {
+                                    "rkm": data._id,
+                                },
                             });
 
                             return user.acceptTermsAndConditions().save().then(() => {
