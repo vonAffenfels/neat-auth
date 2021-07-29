@@ -695,25 +695,26 @@ module.exports = class Auth extends Module {
 
         if (modelName === "user") {
             if (this.config.strategies && this.config.strategies.local === true) {
-                schema.path('username').validate(function (value, cb) {
+                schema.path('username').validate(function (value) {
                     var self = this;
 
                     try {
                         var regexp = new RegExp("^" + value + "$", 'i');
                     } catch (e) {
-                        cb(false);
+                        return Promise.resolve(false);
                     }
 
-                    Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
+                    return Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
                         username: regexp,
                     }).read("primary").then((user) => {
 
                         if ((user && user.id !== self.id)) {
-                            return cb(false);
+                            return false;
                         }
-                        cb(true);
+
+                        return true;
                     }, () => {
-                        cb(false);
+                        return false;
                     });
                 }, 'username duplicated');
 
@@ -749,54 +750,54 @@ module.exports = class Auth extends Module {
                     return true;
                 }, 'username is empty');
 
-                schema.path('email').validate(function (value, cb) {
+                schema.path('email').validate(function (value) {
                     var self = this;
                     try {
                         var regexp = new RegExp("^" + value + "$", 'i');
                     } catch (e) {
-                        cb(false);
+                        return false;
                     }
-                    Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
+                    return Application.modules[selfModule.config.dbModuleName].getModel("user").findOne({
                         email: regexp,
                     }).read("primary").then((user) => {
                         if ((user && user.id !== self.id)) {
-                            return cb(false);
+                            return false;
                         }
 
-                        cb(true);
+                        return true;
                     }, () => {
-                        return cb(false);
+                        return false;
                     });
                 }, 'email duplicate');
             }
 
-            schema.path('termsAndConditions').validate(function (value, cb) {
+            schema.path('termsAndConditions').validate(function (value) {
                 if (!selfModule.config.enabled.terms) {
-                    return cb(true);
+                    return true;
                 }
 
                 // in case the user is being created (by an admin/user with permissions in the backend) dont check terms
                 if (this._createdBy + "" !== this._id + "" && !this._updatedBy) {
-                    return cb(true);
+                    return true;
                 }
 
                 // in case the user is being updated (by an admin/user with permissions in the backend) dont check terms
                 if (this._updatedBy + "" !== this._id + "") {
-                    return cb(true);
+                    return true;
                 }
 
                 // is a connected user, we can only check this on login in this case
                 if (this.oauth && this.oauth.password) {
-                    return cb(true);
+                    return true;
                 }
 
                 // is a connected user, we can only check this on login in this case
                 if (this.oauth && this.oauth.rkm) {
-                    return cb(true);
+                    return true;
                 }
 
                 if (!value || !value.length) {
-                    return cb(false);
+                    return true;
                 }
 
                 let termsModel = Application.modules[selfModule.config.dbModuleName].getModel("termversion");
@@ -808,11 +809,11 @@ module.exports = class Auth extends Module {
                         let acceptedTerms = value[i];
 
                         if (acceptedTerms.version === currentTermsVersion._id) {
-                            return cb(true);
+                            return true;
                         }
                     }
 
-                    cb(false);
+                    return false;
                 });
             }, 'termsAndConditions invalid');
 
