@@ -160,6 +160,14 @@ module.exports = class Auth extends Module {
                                     }
                                 }
 
+                                if (!user.get("oauth.rkm")) {
+                                    res.status(400);
+                                    return res.json({
+                                        code: "not_connected",
+                                        message: "No rkm id found for given user.",
+                                    });
+                                }
+
                                 return strategy.saveUser(user.get("oauth.rkm"), {email, username, password}, this.config.strategies.rkm).then((userData) => {
                                     next();
                                 }, (err) => {
