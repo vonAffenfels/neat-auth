@@ -211,6 +211,30 @@ module.exports.saveUser = async function (_id, data, config) {
     return;
 };
 
+module.exports.validateCredentialsToken = async function (token, config) {
+    return new Promise((resolve, reject) => {
+        return request({
+            url: config.host + "/api/auth-local/credentials-token",
+            method: "post",
+            body: {
+                token: token
+
+            },
+            headers: {
+                "rkm-authorization": config.apiKey,
+            },
+            json: true,
+        }, function (err, res, body) {
+
+            if (err || res.statusCode !== 200) {
+                return reject(new Error("token.invalid"));
+            }
+
+            return resolve(body);
+        });
+    });
+}
+
 async function changePassword(_id, password, config) {
     return new Promise((resolve, reject) => {
         return request({

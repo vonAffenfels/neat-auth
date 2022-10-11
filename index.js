@@ -698,6 +698,20 @@ module.exports = class Auth extends Module {
         });
     }
 
+    async changeUsername(_id, username) {
+        return new Promise((resolve, reject) => {
+            const strategy = require("./strategies/rkm.js");
+            return strategy.changeUsername(_id, username, this.config.strategies.rkm).then(resolve, reject);
+        });
+    }
+
+    async validateCredentialsToken(token) {
+        return new Promise((resolve, reject) => {
+            const strategy = require("./strategies/rkm.js");
+            return strategy.validateCredentialsToken(token, this.config.strategies.rkm).then(resolve, reject);
+        });
+    }
+
     modifySchema(modelName, schema) {
         let selfModule = this;
 
