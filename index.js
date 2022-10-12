@@ -99,7 +99,7 @@ module.exports = class Auth extends Module {
 
                 if (this.config.strategies.token) {
                     Application.modules[this.config.webserverModuleName].addMiddleware((req, res, next) => {
-                        let token = req.headers["neat-auth"] || null;
+                        let token = req.headers["neat-auth"] || req.query["neat-auth"]  || null;
                         let userModel = Application.modules[Application.modules.auth.config.dbModuleName].getModel("user");
 
                         if (!token) {
