@@ -958,9 +958,12 @@ module.exports = class Auth extends Module {
                             this.termsAndConditions = [];
                         }
 
-                        this.termsAndConditions.push({
-                            version: currentTermsVersion._id,
-                        });
+
+                        if (this.termsAndConditions.findIndex(e => e.version === currentTermsVersion._id) === -1) {
+                            this.termsAndConditions.push({
+                                version: currentTermsVersion._id,
+                            });
+                        }
 
                         next();
                     }, () => {
