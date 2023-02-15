@@ -830,7 +830,7 @@ module.exports = class Auth extends Module {
                     for (let i = 0; i < value.length; i++) {
                         let acceptedTerms = value[i];
 
-                        if (acceptedTerms.version === currentTermsVersion._id) {
+                        if (acceptedTerms.version === currentTermsVersion._id.toString()) {
                             return true;
                         }
                     }
@@ -929,10 +929,14 @@ module.exports = class Auth extends Module {
                             return reject(new Error("invalid version"));
                         }
 
+                        if(this.termsAndConditions === true){
+                            return true;
+                        }
+
                         for (let i = 0; i < this.termsAndConditions.length; i++) {
                             let acceptedTerms = this.termsAndConditions[i];
 
-                            if (acceptedTerms.version === currentTermsVersion._id) {
+                            if (acceptedTerms.version === currentTermsVersion._id.toString()) {
                                 return resolve();
                             }
                         }
