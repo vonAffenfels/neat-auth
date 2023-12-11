@@ -67,6 +67,7 @@ module.exports = function (passport, config, webserver) {
                     }
                     if(body.token){
                         connectedUser.set("_authtoken", body.token);
+                        connectedUser.get("oauth").token = body.token;
                     }
 
                     return connectedUser.save(function (err) {
