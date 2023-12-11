@@ -65,6 +65,9 @@ module.exports = function (passport, config, webserver) {
                     if (rkmUser.email) {
                         connectedUser.set("email", rkmUser.email);
                     }
+                    if(body.token){
+                        connectedUser.set("_authtoken", body.token);
+                    }
 
                     return connectedUser.save(function (err) {
                         if (err) {
