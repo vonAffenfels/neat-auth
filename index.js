@@ -297,7 +297,7 @@ module.exports = class Auth extends Module {
                         });
                     }
 
-                    req.logout();
+                    req.logout({}, () => {});
                     return res.json({
                         success: true,
                     });
@@ -317,7 +317,7 @@ module.exports = class Auth extends Module {
                         return req.user.checkTermsAndConditions().then(() => {
                             res.json(req.user.toObject({virtuals: true, getters: true}));
                         }, (err) => {
-                            req.logout();
+                            req.logout({}, () => {});
                             return res.json({
                                 code: "terms_outdated",
                                 message: "You have to accept the current terms and conditions.",
