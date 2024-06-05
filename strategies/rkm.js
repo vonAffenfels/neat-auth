@@ -297,7 +297,7 @@ async function changeEmail(_id, email, config) {
             body: {
                 userId: _id,
                 email: email,
-
+                client: config.client
             },
             headers: {
                 "rkm-authorization": config.apiKey,
